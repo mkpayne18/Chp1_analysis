@@ -6,7 +6,7 @@
 
 
 #1. Read in and tailor the data as necessary ===================================
-setwd("~/Documents/CHUM THESIS/MODEL")
+setwd("~/Documents/CHUM_THESIS/Analysis")
 Master_dataset <- read.csv("Master_dataset.csv")
 View(Master_dataset)
 #Stream_hydro and year are categorical variables!

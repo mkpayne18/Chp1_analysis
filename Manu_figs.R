@@ -1,4 +1,4 @@
-setwd("~/Documents/CHUM THESIS/MODEL")
+setwd("~/Documents/CHUM_THESIS/Analysis")
 Master_dataset <- read.csv("Master_dataset.csv")
 Master_dataset$Year <- factor(Master_dataset$Year)
 

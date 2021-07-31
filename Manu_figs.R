@@ -185,6 +185,15 @@ dev.off( ) #now the displayed graphs are saved to a file with the above file nam
 
 #Figure 3. Across-year variability in # of strays ##############################
 ################################################################################
+#Use dataset "f", which is what I used for modeling (it has a few streams filtered
+#out of it that I didn't want to include, see Model_fitting2.R for more info):
+delete <- c("Chilkat River", "Disappearance Creek", "Black River", "Herman Creek")
+f <- Master_dataset[!(Master_dataset$StreamName %in% delete),]
+#only delete 2010 for Saook Bay West Head, not 2011:
+f <- f[!(f$Year == "2010" & f$StreamName == "Saook Bay West Head"), ]
+#make year a factor so it will plot as discrete years
+f$Year <- as.factor(f$Year)
+
 #Let's use Fish Creek, Sister Lake SE Head, and Kadashan River because they all
 #have at least 4 years of data collection and are quite variable. Sister Lake SE
 #Head in particular is variable in attractiveness ranking over time as well as #
@@ -219,23 +228,21 @@ var_strms <- rbind.data.frame(Fish, Sister, Kad)
 var_strms$StreamName <- factor(var_strms$StreamName, levels = c("Fish Creek",
                                                                 "Sister Lake SE Head",
                                                                 "Kadashan River"))
+var_strms$Avg_number_strays[var_strms$Avg_number_strays == 0] <- 0.03 #I'm 
+#adding a small amount here to the stream surveys where 0 strays were detected 
+#(but a survey still occurred). That way on the graph, a tiny bar will appear to
+#indicate "0 strays detected" and differentiate those stream-years from stream-yrs
+#where surveys didn't occur
+
 View(var_strms)
 p <- ggplot() + geom_col(data = var_strms, aes(x = Year, y = Avg_number_strays)) +
   facet_wrap(~StreamName, scales = "free", nrow = 3, ncol = 1) +
-  ylab("Average Number of Strays") + theme_bw() + annotate("rect", xmin = 1.6,
-                                                           xmax = 2.4, ymin = 0,
-                                                           ymax = 0.02) +
-  annotate("rect", xmin = 3.6, xmax = 4.4, ymin = 0, ymax = 0.02) +
-  annotate("rect", xmin = 4.6, xmax = 5.4, ymin = 0, ymax = 0.02) #these last few
-#annotates are to add a tiny rectangle to the Kadashan River plot for years
-#(2009, 2011, and 2013) where the stream was sampled but there were 0 strays de-
-#tected, so it shouldn't be an NA. I can't easily figure out how to add a small
-#"zero" line in those spots using the main ggplot functions, so I'm cheating and 
-#using annotate instead
+  ylab("Average Number of Strays") + theme_bw() +
+  theme(strip.background = element_rect(fill = NA),
+        strip.text = element_text(size = 10)) 
 p #looks good
 
 #Export as high-res figure
-setwd("~/Documents/CHUM THESIS/Manuscript/Figures")
 tiff("fig3.tiff", width = 7, height = 6, pointsize = 12, units = 'in', res = 300)
 p #graph that you want to export
 dev.off( ) #now the displayed graphs are saved to a file with the above file name

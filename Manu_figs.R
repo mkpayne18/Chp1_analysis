@@ -1,5 +1,6 @@
 setwd("~/Documents/CHUM_THESIS/Analysis")
 Master_dataset <- read.csv("Master_dataset.csv")
+#Year is a factor variable!
 Master_dataset$Year <- factor(Master_dataset$Year)
 
 #Figure 1. Observed number of strays + hatchery locations map ##################

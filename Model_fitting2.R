@@ -74,7 +74,7 @@ boxplot(Avg_number_strays ~ Subregion, data = f) #but doesn't overwhelmingly sho
 #taining NA values since there will be many issues with model validation later
 #on if you don't 
 f <- f[complete.cases(f), ]
-
+View(f)
 
 
 
@@ -169,7 +169,7 @@ ptmap2 <- ptmap1 + scalebar(x.min = -137, x.max = -135, y.min = 54.8, y.max = 55
 north2(ptmap2, x = 0.22, y = 0.22, symbol = 3)
 
 #Export as high-res figure
-setwd("~/Documents/CHUM THESIS/Manuscript/Spatial_AutoC")
+setwd("~/Documents/CHUM_THESIS/Manuscript/Spatial_AutoC")
 tiff("spati_auto_map.tiff", width = 7, height = 6, pointsize = 12, units = 'in', res = 300)
 north2(ptmap2, x = 0.22, y = 0.22, symbol = 3) #graph that you want to export
 dev.off( ) #now the displayed graphs are saved to a file with the above file name
@@ -509,7 +509,7 @@ plot(Avg_number_strays ~ WMA_Releases_by_Yr, data = scaled_data) #on average the
 stray_4 <- glmer.nb(Avg_number_strays ~ (1|Year) + Fishery_harvest +
                       Cons_Abundance + Pink_Abundance + WMA_Releases_by_Yr +
                       mean_flow + CV_flow + I(CV_flow^2) +
-                      WMA_Releases_by_Yr:Pink_Abundance, data = scaled_data)
+                      WMA_Releases_by_Yr:Cons_Abundance, data = scaled_data)
 #remember the AICc for the current best model w/o interactions:
 AICc(stray_3) #870.6
 AICc(stray_4)
@@ -521,6 +521,7 @@ summary(stray_4)
 #Pink_Abundance:mean_flow AICc: 872.9, SE: 0.120, p: 0.86
 #Pink_Abundance:CV_flow AICc: 870.3, SE: 0.153, p: 0.11
 #WMA_Releases_by_Yr:Pink_Abundance AICc: 872.9, SE: 0.147, p: 0.94
+#WMA_Releases_by_Yr:Cons_Abundance AICc: 870.3, SE: 0.104, p: 0.105
 #The Cons_Abundance:CV_flow interaction improved the model fit by 2.3 AICc 
 #points, but the model is struggling to converge at this point with so many 
 #terms. Given that the improvement with this interaction term was small, I will
@@ -535,7 +536,7 @@ car::vif(stray_3) #all vif are <2
 
 
 save.image(file = "Model_fitting2_objects.Rdata")
-load("~/Documents/CHUM THESIS/MODEL/Model_fitting2_objects.Rdata")
+load("~/Documents/CHUM_THESIS/Analysis/Model_fitting2_objects.Rdata")
 
 
 
@@ -674,7 +675,7 @@ dat <- data.frame(Year = scaled_data$Year, Stream = scaled_data$StreamName,
 options(scipen = 5) #removes scientific notation format
 View(dat)
 #Export this as a table to inlcude in supplemental material
-setwd("~/Documents/CHUM THESIS/Manuscript/Figures")
+setwd("~/Documents/CHUM_THESIS/Analysis/Manuscript/Figures")
 write.csv(dat, "Table_S4.csv")
 
 
@@ -716,8 +717,15 @@ mean_strays <- dat %>% group_by(Stream) %>% summarise(Average_Obs = mean(Observe
                                                       Average_Pred = mean(Predicted),
                                                       Max_Obs = max(Observed))
 View(mean_strays)
+#add total number of surveys column to include in table for manuscript
+num_surv <- f %>% group_by(StreamName) %>%
+  summarise(Total_surveys = sum(Number.of.surveys))
+?left_join
+colnames(num_surv)[1] <- "Stream"
+mean_strays <- left_join(mean_strays, num_surv, by = "Stream")
 
-setwd("~/Documents/CHUM THESIS/MODEL")
+setwd("~/Documents/CHUM_THESIS/Analysis") #this should already be set within your
+#project hopefully
 write.csv(mean_strays, "Avg_pred&obs.csv")
 
 plot(Average_Obs ~ Average_Pred, data =  mean_strays)

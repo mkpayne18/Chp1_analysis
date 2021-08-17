@@ -28,8 +28,8 @@ f <- Master_dataset[!(Master_dataset$StreamName %in% delete),]
 #only delete 2010 for Saook Bay West Head, not 2011:
 f <- f[!(f$Year == "2010" & f$StreamName == "Saook Bay West Head"), ]
 #If you do choose to keep these creeks in the future, I'm only deleting them here
-#in R. They are still in the original excel Master_dataset. Note that the Total_
-#strays_by_subregion and Total_stray_all_SEAK will differ slightly now because
+#in R. They are still in the original .csv Master_dataset. Note that the Total_
+#strays_by_subregion and Total_strays_all_SEAK will differ slightly now because
 #those columns were calculated in excel and include the strays from the creeks
 #I just deleted^^. So for 2009, if you sum on Number_H_fish, it will give you 411,
 #when the Total_strays_all_SEAK column reads 414 for 2009. In 2010, there were 
@@ -50,7 +50,7 @@ f$WMA_Releases_by_Yr[is.na(f$WMA_Releases_by_Yr)] <- 0
 ?boxplot
 #response variable:
 boxplot(Avg_number_strays ~ Year, data = f) #clearly some differences in years,
-#even within years where sampling pressure was more equivalent
+#even within years where sampling pressure was more evenly spread
 #explanatory variables
 boxplot(Fishery_harvest ~ Year, data = f) #high in 2013
 boxplot(Cons_Abundance ~ Year, data = f)
@@ -188,8 +188,8 @@ cor(f[ , c(10:19)])
 #Pink_Abundance and Pink_Density are highly correlated (0.7+)
 #Dist_nearest_H and Dist_nearest_R are highly correlated (0.7+)
 #Dist_nearest_H and WMA_Releases_by_Yr are highly correlated (-0.56)
-#Dist_nearest_R and WMA_Releases_by_Yr are highly correlated (0.7+)
-#CV_flow and Pink_Density highly are correlated (-0.48), CV_flow borderline with 
+#Dist_nearest_R and WMA_Releases_by_Yr are highly correlated (-0.7+)
+#CV_flow and Pink_Density are correlated (-0.48), CV_flow borderline with 
 #Cons_Abundance, Cons_Density, and Pink_Abundance (-0.30-0.39 correlation)
 
 #I will remove Cons_Density and Pink_Density from the model since they are the 
@@ -322,7 +322,7 @@ ggqqplot(scaled_data$Avg_number_strays) #not normal
 shapiro.test(scaled_data$Avg_number_strays) #p < 0.0001, data is significantly 
 #different from normal distribution
 
-hist(log(scaled_data$Avg_number_strays + 1), col = "blue") #maybe normal?
+hist(log(scaled_data$Avg_number_strays + 1), col = "blue")
 ggqqplot(log(scaled_data$Avg_number_strays + 1)) #not normal
 shapiro.test(log(scaled_data$Avg_number_strays + 1)) #p < 0.0001, data is 
 #significantly different from normal distribution. That being said, I would apply
@@ -433,9 +433,6 @@ broom::tidy(stray_1)
 #residual deviance is 893.5 for 167 degrees of freedom, for a ratio of 5.4. That
 #is still overdispersed. Peter suggests continuing on to see if it predicts OK
 
-#Hydrology_TypeSnow is highly correlated with Hydro_TypeRain, the model intercept,
-#and mean_flow (from previous model dataset which included Hydro_type predictor,
-#see Hydro_methods_detail.docx for more information)
 #Dist_nearest_H HIGHLY correlated with WMA_releases (0.579) and CV_flow (-0.544)
 #Some correlation between CV_flow and Cons_Abundance (0.373) and WMA_Releases_by_Yr
 #(-0.372), respectively. But, both are well under 0.5 correlation so I will leave
@@ -485,7 +482,7 @@ summary(stray_3)
 #I(Fishery_harvest^2) AICc: 919.2, SE: 0.122, p = 0.88
 #I(Cons_Abundance^2) AICc: 919.1, SE: 0.080, p: 0.83
 #I(Pink_Abundance^2) AICc: 915.6, SE: 0.150, p: 0.06
-#I(WMA_Releases_by_Yr^2) AICc: 911.8, SE: 0.27, p: 0.01 #improvement
+#I(WMA_Releases_by_Yr^2) AICc: 911.8, SE: 0.27, p: 0.01 
 #I(mean_flow^2) AICc: 916.0, SE: 0.059, p: 0.09
 #I(CV_flow^2) AICc: 871.2, SE: 0.081, p: 7.02e-13 #improvement
 #I(CV_flow^2)+I(WMA_Releases_by_Yr^2) AICc: 870.1 #some improvement from
@@ -528,7 +525,7 @@ summary(stray_4)
 #the improvement with this interaction term was small, I will leave it out
 #CONCLUSION: NO INTERACTIONS NEEDED
 
-summary(stray_4) #CV_flow^2 correlated with intercept (-0.424). Leave in for now
+summary(stray_3) #CV_flow^2 correlated with intercept (-0.425). Leave in for now
 #and see if it remains after (MuMIn) dredging
 
 #check for multicollinearity before proceeding
@@ -560,12 +557,12 @@ straymod_dredge #Burnham and Anderson 2002 (pg 70) write that delta AIC differen
 #(hard to avoid in observational studies), chief among them is Cade 2015 (Ecology). 
 #A better alternative is to average the predictions (rather than the coefficient
 #estimates) of the top candidate models, hereby leaving the estimated coefficients
-#alone. That is what I will do to make predictions here, using the top 3 models
+#alone. That is what I will do to make predictions here, using the top 2 models
 #from straymod_dredge
 bm1 <- glmer.nb(Avg_number_strays ~ (1|Year) + Cons_Abundance + Pink_Abundance +
                   WMA_Releases_by_Yr + mean_flow + CV_flow + I(CV_flow^2),
-                data = scaled_data) #"bm" for "best model", accounts for 30% of 
-#total weight
+                data = scaled_data) #"bm" for "best model", accounts for 30.2%
+#of total weight
 summary(bm1) #I(CV_flow^2) -0.422 correlation with intercept
 #849.9/168 = 5.1 overdispersion ratio
 car::vif(bm1) #all are <2
@@ -573,23 +570,24 @@ car::vif(bm1) #all are <2
 bm2 <- glmer.nb(Avg_number_strays ~ (1|Year) + Pink_Abundance +
                   WMA_Releases_by_Yr + mean_flow + CV_flow + I(CV_flow^2),
                 data = scaled_data) #accounts for 29% of total weight 
-summary(bm2) #I(CV_flow^2) -0.401 correlation with intercept
-#851.8/169 = 5.0 overdispersion ratio 
+summary(bm2) #I(CV_flow^2) -0.402 correlation with intercept
+#CV_flow and Pink_Abundance correlation: 0.444
+#852.2/169 = 5.0 overdispersion ratio 
 car::vif(bm2) #all are <2
 
 Mod_1_pred <- predict(bm1)
 Mod_2_pred <- predict(bm2)
 Stray_model_predictions <- data.frame(Mod_1_pred, Mod_2_pred)
 #give more weight to bm1 predictions when model-averaging!
-#bm1 weight:
+#bm1 weight (30.2% of the weight out of the total):
 0.302/0.592 #0.510
 
 #bm2 weight:
-0.290/0.592 #0.489
+0.290/0.592 #0.490
 
 Stray_model_predictions$pred_log_strays <-
   (Stray_model_predictions$Mod_1_pred * 0.510) +
-  (Stray_model_predictions$Mod_2_pred * 0.489)
+  (Stray_model_predictions$Mod_2_pred * 0.490)
 
 Stray_model_predictions$predicted_strays <- exp(Stray_model_predictions$pred_log_strays)
 View(Stray_model_predictions)
@@ -705,7 +703,7 @@ dat$Residuals <- dat$Observed - dat$Predicted
 mean(dat$Observed) #8.86
 mean(dat$Predicted[dat$Observed >= 8.86]) #will tell me avg predicted # of strays
 #in which the observed # of strays was above the average:
-#43.21
+#43.06
 mean(dat$Predicted[dat$Observed < 8.86]) #will tell me avg predicted # of strays
 #in which the observed # of strays was below the average:
 #2.98
@@ -730,7 +728,7 @@ write.csv(mean_strays, "Avg_pred&obs.csv")
 
 plot(Average_Obs ~ Average_Pred, data =  mean_strays)
 p <- lm(Average_Obs ~ Average_Pred, data =  mean_strays)
-summary(p) #slope = 0.79
+summary(p) #slope = 0.78
 abline(p, col = "red")
 abline(0,1)
 

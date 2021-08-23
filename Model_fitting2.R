@@ -338,6 +338,7 @@ scaled_data$Avg_number_strays <- log(scaled_data$Avg_number_strays + 1) #WAIT,
 
 
 
+
 #Need to check for overdispersion with poisson first. You can do this by fitting
 #the model and checking the ratio of residual deviance to degrees of freedom
 library(lme4)
@@ -346,7 +347,7 @@ summary(glmer(Avg_number_strays ~ (1|Year) + Fishery_harvest +
                 Dist_nearest_H + mean_flow + CV_flow +
                 Dist_nearest_H:CV_flow, family = "poisson",
               data = scaled_data))
-#Residual deviance is 1818.1 for 168 degrees of freedom for a ratio of 10.8 in
+#Residual deviance is 1841.0 for 167 degrees of freedom for a ratio of 11.02 in
 #mod w/o interactions indicating severe overdispersion (the ratio should be 1). 
 #Source of information:
 #https://biometry.github.io/APES/LectureNotes/2016-JAGS/Overdispersion/OverdispersionJAGS.pdf
@@ -354,6 +355,9 @@ summary(glmer(Avg_number_strays ~ (1|Year) + Fishery_harvest +
 #Hilbe 2007 (book called "Negative Binomial Regression") recommends constructing
 #required interactions (pg. 157) to deal with overdispersion or apparent overdis.
 #the interactions I added iteratively to the model above included:
+#This section not updated since updating Pink_Abundance data points in August 
+#2021, but checking for required interactions didn't work before so I don't ex-
+#pect it to now...
 #Cons_Abundance:Pink_Abundance -> new ratio = 1818.1/167 = 10.9
 #Cons_Abundance:mean_flow -> new ratio = 1812.6/167 = 10.9
 #Cons_Abundance:CV_flow -> new ratio = 1749.8/167 = 10.8
@@ -430,13 +434,13 @@ stray_1 <- glmer.nb(Avg_number_strays ~ (1|Year) + Fishery_harvest +
 summary(stray_1) 
 #also try 
 broom::tidy(stray_1)
-#residual deviance is 893.5 for 167 degrees of freedom, for a ratio of 5.4. That
+#residual deviance is 902.9 for 167 degrees of freedom, for a ratio of 5.4. That
 #is still overdispersed. Peter suggests continuing on to see if it predicts OK
 
-#Dist_nearest_H HIGHLY correlated with WMA_releases (0.579) and CV_flow (-0.544)
-#Some correlation between CV_flow and Cons_Abundance (0.373) and WMA_Releases_by_Yr
-#(-0.372), respectively. But, both are well under 0.5 correlation so I will leave
-#them
+#Dist_nearest_H HIGHLY correlated with WMA_releases (0.579) and CV_flow (-0.55)
+#Some correlation between CV_flow and Cons_Abundance (0.305), Pink_Abundance
+#(0.36), and WMA_Releases_by_Yr (-0.369), respectively. But, both are well under
+#0.5 correlation so I will leave them
 
 
 #NOTE: Since your n/k < 40, where n is the # of observations and k is the # of
@@ -444,7 +448,7 @@ broom::tidy(stray_1)
 #17.7), you need to calculate the AICc, instead of the AIC, which accounts for 
 #small sample sizes
 library(MuMIn)
-AICc(stray_1) #914.8
+AICc(stray_1) #924.2
 
 ##############
 #No longer applicable bc Hydro_type isn't in model anymore. I kept the following
@@ -463,12 +467,12 @@ AICc(stray_1) #914.8
 
 
 #Dist_nearest_H + WMA_Releases_by_Yr are highly correlated (0.579), as are Dist_
-#nearest_H + CV_flow (-0.544), so remove Dist_nearest_H from model
+#nearest_H + CV_flow (-0.55), so remove Dist_nearest_H from model
 stray_2 <- glmer.nb(Avg_number_strays ~ (1|Year) + Fishery_harvest +
                       Cons_Abundance + Pink_Abundance + WMA_Releases_by_Yr +
                       mean_flow + CV_flow, data = scaled_data)
-summary(stray_2) #all correlations are now <0.35
-AICc(stray_2) #916.9
+summary(stray_2) #all correlations are now <0.4
+AICc(stray_2) #927.3
 
 
 # Check for complex regressors (higher order terms and interactions) ###########
@@ -476,17 +480,17 @@ AICc(stray_2) #916.9
 stray_3 <- glmer.nb(Avg_number_strays ~ (1|Year) + Fishery_harvest +
                       Cons_Abundance + Pink_Abundance + WMA_Releases_by_Yr +
                       mean_flow + CV_flow + I(CV_flow^2), data = scaled_data)
-AICc(stray_2) #916.9 (w/o interactions)
+AICc(stray_2) #927.3 (w/o interactions)
 AICc(stray_3)
 summary(stray_3)
-#I(Fishery_harvest^2) AICc: 919.2, SE: 0.122, p = 0.88
-#I(Cons_Abundance^2) AICc: 919.1, SE: 0.080, p: 0.83
-#I(Pink_Abundance^2) AICc: 915.6, SE: 0.150, p: 0.06
-#I(WMA_Releases_by_Yr^2) AICc: 911.8, SE: 0.27, p: 0.01 
-#I(mean_flow^2) AICc: 916.0, SE: 0.059, p: 0.09
-#I(CV_flow^2) AICc: 871.2, SE: 0.081, p: 7.02e-13 #improvement
-#I(CV_flow^2)+I(WMA_Releases_by_Yr^2) AICc: 870.1 #some improvement from
-#CV_flow^2 alone
+#I(Fishery_harvest^2) AICc: 929.4, SE: 0.126, p = 0.67
+#I(Cons_Abundance^2) AICc: 928.9, SE: 0.080, p: 0.43
+#I(Pink_Abundance^2) AICc: 929.4, SE: 0.133, p: 0.72
+#I(WMA_Releases_by_Yr^2) AICc: 921.4, SE: 0.29, p: 0.01 
+#I(mean_flow^2) AICc: 927.1, SE: 0.061, p: 0.14 #improvement
+#I(CV_flow^2) AICc: 873.7, SE: 0.082, p: 7.28e-15 #improvement
+#I(CV_flow^2)+I(WMA_Releases_by_Yr^2) AICc: 872.7 #some improvement from
+#CV_flow^2 alone (1 AIC point)
 plot(Avg_number_strays ~ CV_flow, data = scaled_data) #increases exponentially @
 #higher values
 plot(Avg_number_strays ~ WMA_Releases_by_Yr, data = scaled_data) #on average there
@@ -506,30 +510,61 @@ plot(Avg_number_strays ~ WMA_Releases_by_Yr, data = scaled_data) #on average the
 stray_4 <- glmer.nb(Avg_number_strays ~ (1|Year) + Fishery_harvest +
                       Cons_Abundance + Pink_Abundance + WMA_Releases_by_Yr +
                       mean_flow + CV_flow + I(CV_flow^2) +
-                      Fishery_harvest:Cons_Abundance, data = scaled_data)
+                      Cons_Abundance:WMA_Releases_by_Yr, data = scaled_data)
 #remember the AICc for the current best model w/o interactions:
-AICc(stray_3) #871.2
+AICc(stray_3) #873.7
 AICc(stray_4)
 summary(stray_4)
-#Fishery_harvest:Cons_Abundance AICc: 872.9 SE: 0.090, 0.46
-#Cons_Abundance:Pink_Abundance AICc: 873.3, SE: 0.139, p: 0.69
-#Cons_Abundance:mean_flow AICc #failed to converge
-#Cons_Abundance:CV_flow AICc: 868.8, SE: 0.102, p: 0.03 #improvement
-#Pink_Abundance:mean_flow AICc: 873.4, SE: 0.120, p: 0.85
-#Pink_Abundance:CV_flow AICc: 870.8, SE: 0.153, p: 0.102 #improvement
-#WMA_Releases_by_Yr:Pink_Abundance AICc: 873.4, SE: 0.147, p: 0.91
-#WMA_Releases_by_Yr:Cons_Abundance AICc: 870.8, SE: 0.105, p: 0.102 #improvement
-#The Cons_Abundance:CV_flow, Pink_Abundance:CV_flow, and WMA_Releases_by_Yr:Cons_
-#Abundance interactions all improved the model fit by 0.4-2.4 AIC points, but
-#the model is struggling to converge at this point with so many terms. Given that
-#the improvement with this interaction term was small, I will leave it out
+#Fishery_harvest:Cons_Abundance AICc: 875.6 SE: 0.093, 0.56
+#Cons_Abundance:Pink_Abundance AICc: 875.5, SE: 0.134, p: 0.48
+#Cons_Abundance:mean_flow AICc #AICc: 874.4, SE: 0.103, p: 0.21
+#Cons_Abundance:CV_flow AICc: 872.6, SE: 0.103, p: 0.06 #improvement
+#Pink_Abundance:mean_flow AICc: 875.9, SE: 0.123, p: 0.98
+#Pink_Abundance:CV_flow AICc: 874.8, SE: 0.149, p: 0.29
+#WMA_Releases_by_Yr:Pink_Abundance AICc: 875.8, SE: 0.144, p: 0.68
+#WMA_Releases_by_Yr:Cons_Abundance AICc: 872.7, SE: 0.105, p: 0.07 #improvement
+#The Cons_Abundance:CV_flow and WMA_Releases_by_Yr:Cons_Abundance interactions
+#all improved the model fit by ~1 AIC point, but the model is struggling to
+#converge at this point with so many terms. Given that the improvement with
+#these interaction term were small, I will leave them out
 #CONCLUSION: NO INTERACTIONS NEEDED
 
-summary(stray_3) #CV_flow^2 correlated with intercept (-0.425). Leave in for now
-#and see if it remains after (MuMIn) dredging
+summary(stray_3) #CV_flow^2 correlated with intercept (-0.444). Leave in for now
+#and see if it remains after (MuMIn) dredging. Some correlation between Pink_A
+#and CV_flow as well (0.385)
 
 #check for multicollinearity before proceeding
-car::vif(stray_3) #all vif are <2
+?car::vif #gives GVIF values. Zuur et al. 2009 (page 387) recommend a cutoff
+#of 3)
+car::vif(stray_3) #all vif are <2 except for Pink_Abundance = 2.12
+car::vif(glmer.nb(Avg_number_strays ~ (1|Year) +
+           Cons_Abundance + Pink_Abundance + WMA_Releases_by_Yr +
+           mean_flow + CV_flow + I(CV_flow^2), data = scaled_data)) #all are <2.1
+#also according to Zuur et al. 2009, you should remove each variable one at a time
+#and see how the VIFs change when you do
+car::vif(glmer.nb(Avg_number_strays ~ (1|Year) + Fishery_harvest +
+                    Pink_Abundance + WMA_Releases_by_Yr +
+                    mean_flow + CV_flow + I(CV_flow^2), data = scaled_data)) #all
+#are <2.05
+car::vif(glmer.nb(Avg_number_strays ~ (1|Year) + Fishery_harvest +
+                    Cons_Abundance + WMA_Releases_by_Yr +
+                    mean_flow + CV_flow + I(CV_flow^2), data = scaled_data)) #all
+#are <1.5
+car::vif(glmer.nb(Avg_number_strays ~ (1|Year) + Fishery_harvest +
+                    Cons_Abundance + Pink_Abundance +
+                    mean_flow + CV_flow + I(CV_flow^2), data = scaled_data)) #all
+#are <1.9
+car::vif(glmer.nb(Avg_number_strays ~ (1|Year) + Fishery_harvest +
+                    Cons_Abundance + Pink_Abundance + WMA_Releases_by_Yr +
+                    CV_flow + I(CV_flow^2), data = scaled_data)) #all are <2.0
+car::vif(glmer.nb(Avg_number_strays ~ (1|Year) + Fishery_harvest +
+                    Cons_Abundance + Pink_Abundance + WMA_Releases_by_Yr +
+                    mean_flow + I(CV_flow^2), data = scaled_data)) #all are <1.8
+car::vif(glmer.nb(Avg_number_strays ~ (1|Year) + Fishery_harvest +
+                    Cons_Abundance + Pink_Abundance + WMA_Releases_by_Yr +
+                    mean_flow + CV_flow, data = scaled_data)) #all are <2.25 (Pink_
+#Abundance = 2.247)
+#All of these VIFs look good. Nothing even comes close to 3
 
 
 save.image(file = "Model_fitting2_objects.Rdata")
@@ -550,29 +585,30 @@ straymod_dredge <- dredge(stray_3, rank = "AICc")
 straymod_dredge #Burnham and Anderson 2002 (pg 70) write that delta AIC differences
 #of 0-2 models all have substantial support, so I will keep and average my models
 #which have delta AICc <= 2 when model averaging (those are the top 2 models,
-#which collectively include 0.592, or 59% of the weight).
+#which collectively include 0.573, or 57% of the weight).
 
 #Numerous papers caution against averaging the estimated regression coefficients
 #based on AIC weights due to issues with multicollinearity between predictors 
 #(hard to avoid in observational studies), chief among them is Cade 2015 (Ecology). 
 #A better alternative is to average the predictions (rather than the coefficient
-#estimates) of the top candidate models, hereby leaving the estimated coefficients
+#estimates) of the top candidate models, thereby leaving the estimated coefficients
 #alone. That is what I will do to make predictions here, using the top 2 models
 #from straymod_dredge
 bm1 <- glmer.nb(Avg_number_strays ~ (1|Year) + Cons_Abundance + Pink_Abundance +
                   WMA_Releases_by_Yr + mean_flow + CV_flow + I(CV_flow^2),
-                data = scaled_data) #"bm" for "best model", accounts for 30.2%
+                data = scaled_data) #"bm" for "best model", accounts for 31.4%
 #of total weight
-summary(bm1) #I(CV_flow^2) -0.422 correlation with intercept
-#849.9/168 = 5.1 overdispersion ratio
-car::vif(bm1) #all are <2
+summary(bm1) #I(CV_flow^2) -0.439 correlation with intercept
+#852.4/168 = 5.1 overdispersion ratio
+#CV_flow and Pink_Abundance correlation (0.427)
+car::vif(bm1) #all are <2.1
 
 bm2 <- glmer.nb(Avg_number_strays ~ (1|Year) + Pink_Abundance +
                   WMA_Releases_by_Yr + mean_flow + CV_flow + I(CV_flow^2),
-                data = scaled_data) #accounts for 29% of total weight 
-summary(bm2) #I(CV_flow^2) -0.402 correlation with intercept
-#CV_flow and Pink_Abundance correlation: 0.444
-#852.2/169 = 5.0 overdispersion ratio 
+                data = scaled_data) #accounts for 25.9% of total weight 
+summary(bm2) #I(CV_flow^2) -0.417 correlation with intercept
+#CV_flow and Pink_Abundance correlation: 0.532 !!!
+#855/169 = 5.0 overdispersion ratio 
 car::vif(bm2) #all are <2
 
 Mod_1_pred <- predict(bm1)
@@ -580,14 +616,14 @@ Mod_2_pred <- predict(bm2)
 Stray_model_predictions <- data.frame(Mod_1_pred, Mod_2_pred)
 #give more weight to bm1 predictions when model-averaging!
 #bm1 weight (30.2% of the weight out of the total):
-0.302/0.592 #0.510
+0.314/0.573 #0.530
 
 #bm2 weight:
-0.290/0.592 #0.490
+0.259/0.573 #0.452
 
 Stray_model_predictions$pred_log_strays <-
-  (Stray_model_predictions$Mod_1_pred * 0.510) +
-  (Stray_model_predictions$Mod_2_pred * 0.490)
+  (Stray_model_predictions$Mod_1_pred * 0.530) +
+  (Stray_model_predictions$Mod_2_pred * 0.452)
 
 Stray_model_predictions$predicted_strays <- exp(Stray_model_predictions$pred_log_strays)
 View(Stray_model_predictions)
@@ -659,7 +695,7 @@ plot(bm1, main = "Top Model") #is there a cone shape in this plot?
 #remember to use the averaged predictions, not just predictions from bm1
 plot(scaled_data$Avg_number_strays ~ Stray_model_predictions$predicted_strays)
 q <- lm(scaled_data$Avg_number_strays ~ Stray_model_predictions$predicted_strays)
-summary(q) #ratio of observed to predicted: 0.53 (model under-predicts more than 
+summary(q) #ratio of observed to predicted: 0.54 (model under-predicts more than 
 #it over-predicts on average)
 abline(q, col = "red")
 abline(0, 1)
@@ -703,7 +739,7 @@ dat$Residuals <- dat$Observed - dat$Predicted
 mean(dat$Observed) #8.86
 mean(dat$Predicted[dat$Observed >= 8.86]) #will tell me avg predicted # of strays
 #in which the observed # of strays was above the average:
-#43.06
+#40.13
 mean(dat$Predicted[dat$Observed < 8.86]) #will tell me avg predicted # of strays
 #in which the observed # of strays was below the average:
 #2.98
@@ -724,11 +760,11 @@ mean_strays <- left_join(mean_strays, num_surv, by = "Stream")
 
 setwd("~/Documents/CHUM_THESIS/Analysis/Figs_Results") #this should already be
 #set within your project hopefully
-write.csv(mean_strays, "Avg_pred&obs.csv")
+write.csv(mean_strays, "Table_4.csv")
 
 plot(Average_Obs ~ Average_Pred, data =  mean_strays)
 p <- lm(Average_Obs ~ Average_Pred, data =  mean_strays)
-summary(p) #slope = 0.78
+summary(p) #slope = 0.84
 abline(p, col = "red")
 abline(0,1)
 
@@ -942,7 +978,7 @@ for (i in 1:100) {
   rmse_output100[i] <- rmse
 }
 View(rmse_output100)
-mean(rmse_output100) #22.18
+mean(rmse_output100) #22.14
 
 #Question of whether I should use RMSE (root mean squared error) as the cross-V
 #performance metric or MAE (mean absolute error). The key difference is that RMSE
@@ -988,7 +1024,7 @@ for (i in 1:100) {
   mae_output100[i] <- mae
 }
 View(mae_output100)
-mean(mae_output100) #7.80 = mean absolute error
+mean(mae_output100) #7.70 = mean absolute error
 
 
 
@@ -1032,7 +1068,7 @@ ggplot(data = tidy(bm1)) +
                     ymax = estimate + std.error))
 
 #Export as high-res figure
-setwd("~/Documents/CHUM THESIS/Manuscript/Figures")
+setwd("~/Documents/CHUM_THESIS/Manuscript/Figures")
 tiff("fig4_alt.tiff", width = 7, height = 6, pointsize = 12, units = 'in', res = 300)
 coef_table #graph that you want to export
 dev.off( ) #now the displayed graphs are saved to a file with the above file name
@@ -1258,7 +1294,7 @@ cov_plots <- grid.arrange(grobs = plotlist, ncol = 2,
 ggsave(filename = "fig4.tiff", plot = cov_plots)#Because the export as .tiff steps
 #below don't work for this one for some reason 
 #Export as high-res figure
-setwd("~/Documents/CHUM THESIS/Manuscript/Figures")
+setwd("~/Documents/CHUM_THESIS/Analysis/Figs_Results")
 tiff("fig4.tiff", width = 7, height = 6, pointsize = 12, units = 'in', res = 300)
 cov_plots #graph that you want to export
 dev.off( ) #now the displayed graphs are saved to a file with the above file name

@@ -69,6 +69,14 @@ boxplot(WMA_Releases_by_Yr ~ Subregion, data = f) #more releases within 40km
 boxplot(Avg_number_strays ~ Subregion, data = f) #but doesn't overwhelmingly show
 #up in the response
 
+plot(Avg_number_strays ~ Cons_Abundance, data = f)
+plot(Avg_number_strays ~ Pink_Abundance, data = f)
+plot(Avg_number_strays ~ WMA_Releases_by_Yr, data = f)
+plot(Avg_number_strays ~ Dist_nearest_H, data = f)
+plot(Avg_number_strays ~ Dist_nearest_R, data = f)
+plot(Avg_number_strays ~ mean_flow, data = f)
+plot(Avg_number_strays ~ CV_flow, data = f)
+
 #remove rows containing NA values (9 rows, 3 streams). As I find out later and 
 #after reading about missing values in Zuur, it is best to remove the rows con-
 #taining NA values since there will be many issues with model validation later
@@ -298,8 +306,18 @@ scaled_data$CV_flow <-
   scale(scaled_data$CV_flow, center = TRUE, scale = TRUE)
 View(scaled_data)
 
-
-
+#Evaluate possible outliers
+plot(Avg_number_strays ~ Cons_Abundance, data = scaled_data)
+plot(Avg_number_strays ~ Pink_Abundance, data = scaled_data) #low possibly in-
+#fluential point x2, where two streams had no pink salmon
+plot(Avg_number_strays ~ WMA_Releases_by_Yr, data = scaled_data)
+plot(Avg_number_strays ~ Dist_nearest_H, data = scaled_data)
+plot(Avg_number_strays ~ Dist_nearest_R, data = scaled_data)
+plot(Avg_number_strays ~ mean_flow, data = scaled_data) #low possibly influential
+#point
+plot(Avg_number_strays ~ CV_flow, data = scaled_data)
+#the above mentioned data points are not errors and are important to include, 
+#particularly the streams lacking pink salmon. Leave outliers alone for now
 
 
 
@@ -568,7 +586,6 @@ car::vif(glmer.nb(Avg_number_strays ~ (1|Year) + Fishery_harvest +
 
 
 save.image(file = "Model_fitting2_objects.Rdata")
-load("~/Documents/CHUM_THESIS/Analysis/Model_fitting2_objects.Rdata")
 
 
 
@@ -1068,7 +1085,7 @@ ggplot(data = tidy(bm1)) +
                     ymax = estimate + std.error))
 
 #Export as high-res figure
-setwd("~/Documents/CHUM_THESIS/Manuscript/Figures")
+setwd("~/Documents/CHUM_THESIS/Analysis/Figs_Results")
 tiff("fig4_alt.tiff", width = 7, height = 6, pointsize = 12, units = 'in', res = 300)
 coef_table #graph that you want to export
 dev.off( ) #now the displayed graphs are saved to a file with the above file name

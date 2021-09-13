@@ -190,18 +190,31 @@ dev.off( ) #now the displayed graphs are saved to a file with the above file nam
 
 #2. Check for collinearity =====================================================
 #check for correlation between covariates
-?cor #cor() default gives Pearson's correlation coefficients
-cor(f[ , c(10:19)])
-#Cons_Abundance and Cons_Density are highly correlated (0.7+)
-#Pink_Abundance and Pink_Density are highly correlated (0.7+)
-#Dist_nearest_H and Dist_nearest_R are highly correlated (0.7+)
-#Dist_nearest_H and WMA_Releases_by_Yr are highly correlated (-0.56)
-#Dist_nearest_R and WMA_Releases_by_Yr are highly correlated (-0.7+)
+library(corrgram) #visually assess first
+corrgram(f[ , c(10:19)])
+
+library(Hmisc)
+stray_vars <- as.matrix(f[ , c(10:19)])  # Save variables as a matrix 
+(COR <- rcorr(stray_vars, type = "spearman"))
+#or alternatively, from base R:
+cor(f[ , c(10:19)], method = "spearman") #you should use spearman, not pearson
+#correlation coefs because your data may not be normal
+COR$r   # Matrix of correlations
+COR$P   # Matrix of p-values (which correlations are significant)
+#Cons_Abundance and Cons_Density are highly correlated (0.89)
+#Cons_Abundance and Pink_Abundance possibly correlated (0.46)
+#Pink_Abundance and Pink_Density are highly correlated (0.88)
+#Dist_nearest_H and Dist_nearest_R are highly correlated (0.69)
+#Dist_nearest_H and WMA_Releases_by_Yr are highly correlated (-0.55)
+#Dist_nearest_R and WMA_Releases_by_Yr are highly correlated (-0.81)
+#mean_flow and Dist_nearest_R are correlated (0.52)
+#CV_flow and Pink_Abundance possibly correlated (0.46)
 #CV_flow and Pink_Density are correlated (-0.48), CV_flow borderline with 
 #Cons_Abundance, Cons_Density, and Pink_Abundance (-0.30-0.39 correlation)
+print(COR$P <= 0.05) #all of the above mentioned correlations are significant
 
 #I will remove Cons_Density and Pink_Density from the model since they are the 
-#less important of the correlated sets (mostly bc I don't have a lot of con-
+#less important of their correlated sets (mostly bc I don't have a lot of con-
 #fidence in the density denominator data (area))
 
 #I will also remove Dist_nearest_R from consideration because it is highly corr-

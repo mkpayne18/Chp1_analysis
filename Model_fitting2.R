@@ -1,3 +1,10 @@
+#First version of model fitting process to predict the average number of hatchery
+#origin strays in each stream and year. THIS SCRIPT IS NO LONGER IN USE because 
+#it is not rigorous enough in the exploratory data analysis, the covariates are
+#transformed which I chose not to do later on, and I am likely not going to use
+#Avg_number_strays as a response variable anymore. I've held onto this script to
+#track the history and development of my modeling process
+
 #Molly K. Payne
 #Stray Model Code 2020-2021
 #If not otherwise cited, my sources of information which guided my modeling 
@@ -25,7 +32,7 @@ str(Master_dataset)
 #really late bc they are fall-run (Chilkat + Dis.Creek), or early (before 7/20).
 delete <- c("Chilkat River", "Disappearance Creek", "Black River", "Herman Creek")
 f <- Master_dataset[!(Master_dataset$StreamName %in% delete),]
-#only delete 2010 for Saook Bay West Head, not 2011:
+#only delete 2010 for Saook Bay West Head, not 2011:   
 f <- f[!(f$Year == "2010" & f$StreamName == "Saook Bay West Head"), ]
 #If you do choose to keep these creeks in the future, I'm only deleting them here
 #in R. They are still in the original .csv Master_dataset. Note that the Total_
@@ -46,36 +53,35 @@ View(f)
 #come up with any fish being released in the vicinity
 f$WMA_Releases_by_Yr[is.na(f$WMA_Releases_by_Yr)] <- 0
 
-#some quick visualization/exploration ----
-?boxplot
-#response variable:
-boxplot(Avg_number_strays ~ Year, data = f) #clearly some differences in years,
-#even within years where sampling pressure was more evenly spread
-#explanatory variables
-boxplot(Fishery_harvest ~ Year, data = f) #high in 2013
-boxplot(Cons_Abundance ~ Year, data = f)
-boxplot(Pink_Abundance ~ Year, data = f)
-boxplot(WMA_Releases_by_Yr ~ Year, data = f) #higher in 2017-2019, which makes sense
-boxplot(Dist_nearest_H ~ Year, data = f) #significantly higher in 2008
-boxplot(Dist_nearest_R ~ Year, data = f) #high in 2008, low in 2017-2019
-boxplot(mean_flow ~ Year, data = f, na.action = na.omit)
-boxplot(CV_flow ~ Year, data = f, na.action = na.omit) #high in 2017-2019 ----
-
-pairs(f[ , c(9:19)]) #collinearity likely between Dist_nearest_H and Dist_nearest_R
-#also between the abundance and density predictors for each respective species
+#exploratory data analysis -----------------------------------------------------
+#YOU SHOULD PLOT EXPLANATORY VARIABLES AGAINST THE LOG OF THE RESPONSE,
+#NOT THE RESPONSE, BC THAT IS WHAT YOU WILL BE MODELING
+#boxplots of explanatory variables by year
+par(ask=T) #interactive plot mode; allows you to click to see next plot
+par(mar=c(2,2,3,1))
+for(i in names(f)[10:19]) {	# cycle through names in data frame
+  # (explanatory variables only - cols 10:19)
+  x <- f$Year		# extract years for plotting
+  y <- f[,i]			# extract ith variable
+  plot(x, y, type = "b", xlab="", ylab="")
+  title(i)
+}
+par(ask=F) #now turn off the interactive plot mode
 
 boxplot(WMA_Releases_by_Yr ~ Subregion, data = f) #more releases within 40km
 #of streams in NSEI
 boxplot(Avg_number_strays ~ Subregion, data = f) #but doesn't overwhelmingly show
 #up in the response
 
-plot(Avg_number_strays ~ Cons_Abundance, data = f)
-plot(Avg_number_strays ~ Pink_Abundance, data = f)
-plot(Avg_number_strays ~ WMA_Releases_by_Yr, data = f)
-plot(Avg_number_strays ~ Dist_nearest_H, data = f)
-plot(Avg_number_strays ~ Dist_nearest_R, data = f)
-plot(Avg_number_strays ~ mean_flow, data = f)
-plot(Avg_number_strays ~ CV_flow, data = f)
+#scatter plots to observe relationship between response and explanatory vars:
+par(ask=T)
+for(i in names(f)[10:19]) {
+  x <- f[,i]
+  y <- f$Avg_number_strays	
+  plot(x, y, xlab=i, ylab="Average (obs) # of strays")
+  title(i)
+}
+par(ask=F)
 
 #remove rows containing NA values (9 rows, 3 streams). As I find out later and 
 #after reading about missing values in Zuur, it is best to remove the rows con-

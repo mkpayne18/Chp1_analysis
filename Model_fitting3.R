@@ -492,6 +492,14 @@ par(mfrow=c(1,1))
 plot(residuals(bm1, type = "deviance") ~ fitted(bm1), main = "Model #1-outlier included")
 plot(residuals(bm2, type = "deviance") ~ fitted(bm2), main = "Model #2-outlier included")
 
+### For manuscript: ggplot2 version
+outlieryes <- data.frame(deviance_resid = residuals(bm1, type = "deviance"),
+                        pred = fitted(bm1))
+dev_outlieryes <- ggplot(outlieryes, aes(pred, deviance_resid)) + geom_point() +
+  xlab("Model predicted values") + ylab("Deviance residuals") + theme_bw()
+dev_outlieryes
+
+
 #Pearson residuals
 plot(residuals(bm1, type = "pearson") ~ fitted(bm1), main = "Model #1-outlier included")
 plot(residuals(bm2, type = "pearson") ~ fitted(bm2), main = "Model #2-outlier included")
@@ -614,7 +622,21 @@ plot(Observed ~ Predicted, data = bm1_pred, main = "Model #1-outlier included")
 plot(Observed ~ Predicted, data = bm1_pred, xlim=range(0,50),
      main = "Model #1-outlier included, lim x-range")
 abline(0,1)
-abline(lm(Observed ~ Predicted, data = bm1_pred), col = "red")
+abline(lm(Observed ~ Predicted, data = bm1_pred), lty = 2)
+
+#ggplot version for manuscript:
+lm_yes <-lm(Observed ~ Predicted, data = bm1_pred)
+summary(lm_yes)
+OP_outlieryes <- ggplot(bm1_pred, aes(Predicted, Observed)) + geom_point() +
+  geom_abline(slope = 0.624, intercept = 2.62) +
+  geom_abline(slope = 1, intercept = 1, linetype = "dashed") + theme_bw()
+OP_outlieryes
+
+#Export as high-res figure
+tiff("OP_outlieryes.tiff", width = 7, height = 6, pointsize = 12, units = 'in', res = 300)
+OP_outlieryes #graph that you want to export
+dev.off( ) 
+#OR combine with same plot that has the outlier removed below (section 7.4)
 
 #Averages by stream
 mean_bm1_pred <- bm1_pred %>% group_by(StreamName) %>%
@@ -983,6 +1005,22 @@ par(mfrow=c(1,1))
 plot(residuals(bm1u, type = "deviance") ~ fitted(bm1u), main = "Model #1-outlier removed")
 plot(residuals(bm2u, type = "deviance") ~ fitted(bm2u), main = "Model #2-outlier removed")
 
+
+### For manuscript: ggplot2 version of deviance residuals
+outlierno <- data.frame(deviance_resid = residuals(bm1u, type = "deviance"),
+                        pred = fitted(bm1u))
+dev_outlierno <- ggplot(outlierno, aes(pred, deviance_resid)) + geom_point() +
+  xlab("Model predicted values") + ylab("Deviance residuals") + theme_bw()
+dev_outlierno
+
+#Combine with deviance ~ fitted values plot from section 5.2:
+deviance_plot <- ggpubr::ggarrange(dev_outlieryes, dev_outlierno)
+#Export as high-res figure
+tiff("deviance_plot.tiff", width = 8, height = 5, pointsize = 12, units = 'in', res = 300)
+deviance_plot #graph that you want to export
+dev.off( )
+
+
 #Pearson residuals
 plot(residuals(bm1u, type = "pearson") ~ fitted(bm1u), main = "Model #1-outlier removed")
 plot(residuals(bm2u, type = "pearson") ~ fitted(bm2u), main = "Model #2-outlier removed")
@@ -1103,6 +1141,23 @@ plot(Observed ~ Predicted, data = bm1u_pred, xlim=range(0,50),
 abline(0,1)
 abline(lm(Observed ~ Predicted, data = bm1u_pred), col = "red")
 
+#ggplot version for manuscript
+lm_no <-lm(Observed ~ Predicted, data = bm1u_pred)
+summary(lm_no)
+OP_outlierno <- ggplot(bm1u_pred, aes(Predicted, Observed)) + geom_point() +
+  geom_abline(slope = 0.751, intercept = 1.63) +
+  geom_abline(slope = 1, intercept = 1, linetype = "dashed") + theme_bw()
+OP_outlierno
+obs_pred_plot <- ggpubr::ggarrange(OP_outlieryes, OP_outlierno) #combine with 
+#same figure which excludes the outlier (section 5.4 above)
+obs_pred_plot
+
+#Export as high-res figure
+tiff("obs_pred_plot.tiff", width = 8, height = 4, pointsize = 12, units = 'in', res = 300)
+obs_pred_plot #graph that you want to export
+dev.off( ) 
+
+
 #Averages by stream
 mean_bm1u_pred <- bm1u_pred %>% group_by(StreamName) %>%
   summarise(Mean_pred_strays = mean(Predicted), Mean_obs_strays = mean(Observed))
@@ -1133,13 +1188,18 @@ mean(f_update$Cons_Abundance, na.rm = T) #3034
 sd(f_update$Cons_Abundance, na.rm = T) #4286
 x_Cons$Cons_Abundance <- (x_Cons$Cons_Abundance * 4286) + 3034
 
+#reduce range of observed data points
+trunc_Avg_strays <- f_update[f_update$Avg_number_strays < 10,]
+#create plot
 Cons_plot <- ggplot() +
   geom_line(data = x_Cons, aes(x = Cons_Abundance, y=fit), color="red") +
   geom_ribbon(data= x_Cons,
               aes(x = Cons_Abundance, ymin = lower, ymax = upper),
               alpha= 0.3, fill="grey70") +
   xlab("Chum Salmon Abundance") +
-  ylab("ln(Average # Number of Strays)") + theme_classic() #+ ylim(0, 20)
+  ylab("ln(Average # Number of Strays)") + theme_classic() #+
+  #geom_point(data = trunc_Avg_strays, aes(x = Cons_Abundance,
+                                          #y = Avg_number_strays)) #+ ylim(0, 20)
 Cons_plot
 
 
@@ -1160,7 +1220,9 @@ WMA_plot <- ggplot() +
               aes(x = WMA_Releases_by_Yr, ymin = lower, ymax = upper),
               alpha= 0.3, fill="grey70") +
   xlab("Number of Fish Released within 40KM") +
-  ylab("ln(Average # Number of Strays)") + theme_classic() #+ ylim(0, 20)
+  ylab("ln(Average # Number of Strays)") + theme_classic() #+
+  #geom_point(data = trunc_Avg_strays, aes(x = WMA_Releases_by_Yr,
+                                          #y = Avg_number_strays))#+ ylim(0, 20)
 WMA_plot
 
 
@@ -1187,7 +1249,24 @@ CVflow_plot <- ggplot() +
 CVflow_plot
 
 library(ggpubr)
-ggarrange(WMA_plot, Cons_plot, CVflow_plot)
+all_effects_plot <- ggarrange(WMA_plot, Cons_plot, CVflow_plot)
+#export high-res figure
+tiff('effects_plots.tiff', width = 10, height = 6.3, pointsize = 12,
+     units = 'in', res = 300)
+all_effects_plot
+dev.off()
+
+
+strays_range <- fu_scaled %>% group_by(StreamName) %>%
+  summarise_at(vars(Avg_number_strays), list(mean, min, max))
+View(strays_range)
+
+
+#Table S3: Individual stream survey info #######################################
+tabs3 <- fu_scaled[,c(2:7)]
+head(tabs3)
+write.csv(tabs3, "Table_S3.csv")
+
 
 
 

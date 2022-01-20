@@ -1,7 +1,44 @@
+#Note that some figures and tables made more sense to create in Model_fitting3.R,
+#so if you can't find the code for a figure you expected to find here then check
+#that script 
+
+
 setwd("~/Documents/CHUM_THESIS/Analysis")
 Master_dataset <- read.csv("Master_dataset.csv")
 #Year is a factor variable!
 Master_dataset$Year <- factor(Master_dataset$Year)
+
+
+
+
+#Asynchronous metapopulation dynamics figure ###################################
+#Create the dataframe
+Year <- as.factor(c(2013:2015, 2013:2015))
+Type <- as.factor(c(rep("(Average) Hatchery strays",3), rep("Natural origin", 3)))
+Whitewater <- c(4,2,17,2210,365,2009)
+Sister <- c(4,8,6,8186,7858,3993)
+Crawfish <- c(6,2,2,4138,3036,6908)
+Marten <- c(2,0,6,7626,473,5037)
+metapop <- cbind.data.frame(Year, Type, Whitewater, Sister, Crawfish, Marten)
+names_new <- c("Whitewater Creek", "Sister Lake SE Head", "W Crawfish NE Arm Hd",
+               "Marten River")
+metapop <- metapop %>% rename_at(3:6, ~names_new)
+
+metapop2 <- metapop %>% pivot_longer(c(3:6), names_to = "Stream")
+colnames(metapop2)[4] <- "Abundance"
+
+
+#Create the figure
+temporal_var <- ggplot(metapop2, aes(Year, Abundance, group = Stream, col = Stream)) +
+  geom_line() + geom_point() + facet_wrap(~Type, scales = "free", ncol = 1) +
+  theme_bw() + scale_color_brewer(palette = "Paired")
+
+#export high-res figure
+tiff('temporal_var.tiff', width = 8, height = 6.3, pointsize = 12,
+     units = 'in', res = 300)
+temporal_var
+dev.off()
+
 
 #Figure 1. Observed number of strays + hatchery locations map ##################
 ################################################################################
@@ -13,7 +50,7 @@ Avg_strays_by_Yr_w_coords <-
 #remove Fish Creek-Portland Canal
 Avg_strays_by_Yr_w_coords <-
   Avg_strays_by_Yr_w_coords[!Avg_strays_by_Yr_w_coords$StreamName ==
-                                   "Fish Creek-Portland Canal", ]
+                              "Fish Creek-Portland Canal", ]
 
 #include number of times a stream was surveyed on figure: 
 surv <- Master_dataset %>% group_by(StreamName) %>%
@@ -50,7 +87,7 @@ Hatchery_Locations <- cbind.data.frame(Hatchery_Locations, H_llocs)
 
 fig1a <- fig1 + geom_point(data = Hatchery_Locations, aes(x = Longitude,
                                                           y = Latitude, col=H_llocs),
-                  shape = 24, size = 4, fill = "darkred") + labs(col = "") +
+                           shape = 24, size = 4, fill = "darkred") + labs(col = "") +
   scale_color_manual(values = "black")
 fig1a #note that if you don't want hatchery locations to be on the legend (just 
 #mention it in figure caption instead), use the following code instead:
@@ -81,13 +118,13 @@ alaska #nice!
 
 #add to original figure
 fig1b <- fig1a + inset(grob = ggplotGrob(alaska), xmin = -132.75, xmax = -129.75,
-                     ymin = 58.2, ymax = 59.55) 
+                       ymin = 58.2, ymax = 59.55) 
 
 #add scale bar and north arrow
 library(ggsn)
 fig1c <- fig1b + scalebar(x.min = -137.2, x.max = -135.2, y.min = 54.8, y.max = 55, 
-                dist = 50, dist_unit = "km", transform = T, height = 0.5,
-                st.dist = 0.6, st.size = 5)
+                          dist = 50, dist_unit = "km", transform = T, height = 0.5,
+                          st.dist = 0.6, st.size = 5)
 north2(fig1c, x = 0.2, y = 0.22, symbol = 3)
 
 
@@ -121,8 +158,8 @@ Hatchery_Locations <- cbind.data.frame(Hatchery_Locations, H_llocs) #if you didn
 #already do above
 
 fig1b_bw <- fig1a_bw + geom_point(data = Hatchery_Locations, aes(x = Longitude,
-                                                          y = Latitude, col=H_llocs),
-                           shape = 24, size = 4, fill = "white") +
+                                                                 y = Latitude, col=H_llocs),
+                                  shape = 24, size = 4, fill = "white") +
   labs(col = "") + scale_color_manual(values = "black")
 
 #add inset map
@@ -153,13 +190,25 @@ dev.off( ) #now the displayed graphs are saved to a file with the above file nam
 View(Master_dataset)
 plot(Avg_number_strays ~ Dist_nearest_R, data = Master_dataset)
 Dist_nearest_Releas <-
-  read_csv("~/Documents/CHUM THESIS/Data Sources/Dist_Nearest_H&Release/Dist_nearest_Releas.csv")
+  read_csv("~/Documents/CHUM_THESIS/Data Sources/Dist_Nearest_H&Release/Dist_nearest_Releas.csv")
 R_type <- left_join(Master_dataset, Dist_nearest_Releas, by = "StreamName")
 R_type <- as.data.frame(R_type)
 sum(is.na(R_type$Release_site_type))
 
-fig2 <- ggplot(data = R_type, aes(x = Dist_nearest_R, y = Avg_number_strays,
-                          shape = Release_site_type)) + geom_point(size = 3.5) +
+#find row with max avg number of strays for each stream; only for streams with 
+#at least 2 observations (that way there is something to take the max of AND we
+#have slightly more confidence in designating the stream as attractive or not)
+R_type2 <- R_type %>% group_by(StreamName) %>% filter(Avg_number_strays == max(Avg_number_strays))
+#Note that this^^ returns multiple rows if the max value is the same for any 
+#streams (e.g., Little Goose Creek). Remove duplicate rows
+R_type2 <- R_type2[!duplicated(R_type2$StreamName),]
+###Since this might come up, NOTE that the higher avg_number_strays values are
+#not influenced by higher number of surveys (sort R_type2$Avg_number_strays from
+#largest to smallest and look at the number of surveys column) 
+
+
+fig4 <- ggplot(data = R_type2, aes(x = Dist_nearest_R, y = Avg_number_strays,
+                                   shape = Release_site_type)) + geom_point(size = 3.5) +
   theme_classic() + scale_shape_manual(values = c(16, 2)) +
   xlab("Distance to the Nearest Release Site (KM)") +
   ylab("Average Number of Hatchery Strays") + labs(shape = "Release Site Type") +
@@ -167,19 +216,19 @@ fig2 <- ggplot(data = R_type, aes(x = Dist_nearest_R, y = Avg_number_strays,
   theme(axis.title = element_text(size = 13)) +
   theme(legend.text = element_text(size = 11.5)) +
   theme(legend.title = element_text(size = 14))
-  
+fig4
+
 #briefly quantitatively compare the average number of hatchery strays within 40km
 #of release for on-site vs remote release sites
-R_type40km <- R_type[R_type$Dist_nearest_R <= 40, ]
+R_type40km <- R_type2[R_type2$Dist_nearest_R <= 40, ]
 onsite <- R_type40km$Avg_number_strays[R_type40km$Release_site_type == "On-site"]
 Remote <- R_type40km$Avg_number_strays[R_type40km$Release_site_type == "Remote"]
-t.test(onsite, Remote) #streams near hatchery on-site releases averaged 7.3 strays
-#while remote site-proximate streams averaged 27.1 strays. p = 0.005
+t.test(onsite, Remote) #streams near hatchery on-site releases averaged 19.3 strays
+#while remote site-proximate streams averaged 38.6 strays. p = 0.34 (not significant)
 
 #Export as high-res figure
-setwd("~/Documents/CHUM THESIS/Manuscript/Figures")
-tiff("fig2.tiff", width = 7, height = 6, pointsize = 12, units = 'in', res = 300)
-fig2 #graph that you want to export
+tiff("fig4.tiff", width = 7, height = 6, pointsize = 12, units = 'in', res = 300)
+fig4 #graph that you want to export
 dev.off( ) #now the displayed graphs are saved to a file with the above file name
 
 
@@ -251,11 +300,43 @@ dev.off( ) #now the displayed graphs are saved to a file with the above file nam
 
 
 
-#fig 4 code can be found in "Model_fitting2.R" because I made them directly from
-#model data dataset
+#effects plot code can be found in Model_fitting3.R because I made those directly
+#from datasets contained within that script file
 
 
-#Table 3 stuff #################################################################
+#Table 3: pred and observed values #############################################
+tab3.1 <- fu_scaled %>% group_by(StreamName) %>%
+  summarise(across(Avg_number_strays, c(min,max)), across(Number_surveys, sum))
+#from Model_fitting3.R:
+head(mean_bm1u_pred)
+tab3 <- left_join(tab3.1, mean_bm1u_pred)
+tab3 <- tab3[,c(1,5,6,2:4)]
+name_update <- c("Mean predicted number of strays", "Mean observed number of strays",
+                 "Minimum observed number of strays", "Maximum observed number of strays",
+                 "Total number of surveys")
+tab3 <- tab3 %>% rename_at(2:6, ~name_update)
+getwd()
+write.csv(tab3, "pred_obs_table.csv")
+
+
+
+#Table S2: avg pred & obs values for all streams with lat/long #################
+#Lat & long data:
+StreamPoints <- read_csv("~/Documents/CHUM_THESIS/Data Sources/StreamPoints.csv")
+#Avg pred & obs table (alternatively you could use mean_bm1u_pred if Model_fitting3.R
+#objects are loaded)
+pred_obs_table <- read_csv("Figs_Results/pred_obs_table.csv")
+tabs2 <- left_join(StreamPoints, pred_obs_table, by = 'StreamName')
+#check it:
+X_tabs2 <- anti_join(StreamPoints, pred_obs_table, by = 'StreamName') #looks good,
+#all of those creeks were excluded from the model 
+
+tabs2 <- tabs2[complete.cases(tabs2),]
+tabs2 <- tabs2[,-c(1:4,8:10)]
+write.csv(tabs2, "Table_S2.csv")
+
+
+#old Table 3 stuff #############################################################
 u <- X2008_2019_HW_Data %>% group_by(`Hatchery of Origin`) %>%
   summarise(Sum = sum(From_H))
 View(u)
@@ -265,8 +346,15 @@ v <- Releases_site_year %>% group_by(YearReleased) %>%
 View(v)
 
 #Table S3 stuff ################################################################
-#Using the dataframe "f" from Model_fitting2.R:
+#Using the dataframe "f" from Model_fitting3.R:
 w <- f[ , c(1:5, 8)]
 View(w)
 setwd("~/Documents/CHUM THESIS/Manuscript/Figures")
 write.csv(w, "Table_S3.csv")
+
+
+
+
+
+save.image("Manu_figs_objects.R")
+load("Manu_figs_objects.R")

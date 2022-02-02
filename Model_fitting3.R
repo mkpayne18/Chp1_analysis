@@ -1,3 +1,5 @@
+#This script is the final official script for the model fitting process for the model that was #ultimately analyzed and described in my manuscript for chapter 1. See "Folder_Guide.Rmd" for 
+#more info on what the different Model_fittingX.R" files are
 
 #1. Read in and tailor the data as necessary ###################################
 Master_dataset <- read.csv("Master_dataset.csv")
@@ -37,6 +39,12 @@ f$WMA_Releases_by_Yr[is.na(f$WMA_Releases_by_Yr)] <- 0
 f <- f[complete.cases(f), ]
 rownames(f) <- 1:nrow(f)
 colnames(f)[8] <- "Number_surveys"
+
+
+### Note that the final version of this model ended up excluding an outlier (you 
+#can see why I did that in section 5.6-6). To use/see that final model version,
+#skip ahead to section 7 of this script. It includes all the necessary data-
+#tailoring steps that this section 1 above here includes as well
 
 
 
@@ -1013,12 +1021,14 @@ dev_outlierno <- ggplot(outlierno, aes(pred, deviance_resid)) + geom_point() +
   xlab("Model predicted values") + ylab("Deviance residuals") + theme_bw()
 dev_outlierno
 
+### Only in previous version of manuscript where I was wanting to compare deviance
+#residuals for pre- and post-outlier removal models. Peter recommended against
 #Combine with deviance ~ fitted values plot from section 5.2:
-deviance_plot <- ggpubr::ggarrange(dev_outlieryes, dev_outlierno)
+#deviance_plot <- ggpubr::ggarrange(dev_outlieryes, dev_outlierno)
 #Export as high-res figure
-tiff("deviance_plot.tiff", width = 8, height = 5, pointsize = 12, units = 'in', res = 300)
-deviance_plot #graph that you want to export
-dev.off( )
+#tiff("deviance_plot.tiff", width = 8, height = 5, pointsize = 12, units = 'in', res = 300)
+#deviance_plot #graph that you want to export
+#dev.off( )
 
 
 #Pearson residuals
@@ -1142,19 +1152,30 @@ abline(0,1)
 abline(lm(Observed ~ Predicted, data = bm1u_pred), col = "red")
 
 #ggplot version for manuscript
-lm_no <-lm(Observed ~ Predicted, data = bm1u_pred)
+install.packages("extrafont") #to get the Times New Roman font
+library(extrafont)
+font_import()
+loadfonts()
+fonts()
+
+lm_no <-lm(Observed ~ Predicted, data = bm1u_pred) #"no" for no outlier
 summary(lm_no)
 OP_outlierno <- ggplot(bm1u_pred, aes(Predicted, Observed)) + geom_point() +
   geom_abline(slope = 0.751, intercept = 1.63) +
-  geom_abline(slope = 1, intercept = 1, linetype = "dashed") + theme_bw()
-OP_outlierno
-obs_pred_plot <- ggpubr::ggarrange(OP_outlieryes, OP_outlierno) #combine with 
+  geom_abline(slope = 1, intercept = 1, linetype = "dashed") + theme_bw() +
+  theme(text=element_text(family="Times New Roman", size=12)) +
+  theme(axis.text=element_text(size=10))
+OP_outlierno2 <- OP_outlierno + coord_cartesian(clip = "off")
+
+### No longer am visually comparing obs ~ pred for pre- and post-outlier removal
+#in my project:
+#obs_pred_plot <- ggpubr::ggarrange(OP_outlieryes, OP_outlierno) #combine with 
 #same figure which excludes the outlier (section 5.4 above)
-obs_pred_plot
+#obs_pred_plot
 
 #Export as high-res figure
-tiff("obs_pred_plot.tiff", width = 8, height = 4, pointsize = 12, units = 'in', res = 300)
-obs_pred_plot #graph that you want to export
+tiff("obs_pred_plot.tiff", width = 6, height = 4, pointsize = 12, units = 'in', res = 300)
+OP_outlierno #graph that you want to export
 dev.off( ) 
 
 
@@ -1192,12 +1213,15 @@ x_Cons$Cons_Abundance <- (x_Cons$Cons_Abundance * 4286) + 3034
 trunc_Avg_strays <- f_update[f_update$Avg_number_strays < 10,]
 #create plot
 Cons_plot <- ggplot() +
-  geom_line(data = x_Cons, aes(x = Cons_Abundance, y=fit), color="red") +
+  geom_line(data = x_Cons, aes(x = Cons_Abundance, y=fit)) +
   geom_ribbon(data= x_Cons,
               aes(x = Cons_Abundance, ymin = lower, ymax = upper),
               alpha= 0.3, fill="grey70") +
   xlab("Chum Salmon Abundance") +
-  ylab("ln(Average # Number of Strays)") + theme_classic() #+
+  ylab("Attractiveness Index") + theme_classic() +
+  theme(axis.title = element_text(size = 15)) +
+  theme(axis.text = element_text(size = 14)) +
+  theme(text=element_text(family="Times New Roman")) #+
   #geom_point(data = trunc_Avg_strays, aes(x = Cons_Abundance,
                                           #y = Avg_number_strays)) #+ ylim(0, 20)
 Cons_plot
@@ -1215,12 +1239,15 @@ sd(f_update$WMA_Releases_by_Yr, na.rm = T) #27.6
 x_WMA$WMA_Releases_by_Yr <- (x_WMA$WMA_Releases_by_Yr * 27.6) + 16.3
 
 WMA_plot <- ggplot() +
-  geom_line(data = x_WMA, aes(x = WMA_Releases_by_Yr, y=fit), color="blue") +
+  geom_line(data = x_WMA, aes(x = WMA_Releases_by_Yr, y=fit)) +
   geom_ribbon(data= x_WMA,
               aes(x = WMA_Releases_by_Yr, ymin = lower, ymax = upper),
               alpha= 0.3, fill="grey70") +
   xlab("Number of Fish Released within 40KM") +
-  ylab("ln(Average # Number of Strays)") + theme_classic() #+
+  ylab("Attractiveness Index") + theme_classic() +
+  theme(axis.title = element_text(size = 15)) +
+  theme(axis.text = element_text(size = 14)) +
+  theme(text=element_text(family="Times New Roman")) #+
   #geom_point(data = trunc_Avg_strays, aes(x = WMA_Releases_by_Yr,
                                           #y = Avg_number_strays))#+ ylim(0, 20)
 WMA_plot
@@ -1239,21 +1266,36 @@ sd(f_update$CV_flow, na.rm = T) #0.057
 x_CV_flow$CV_flow <- (x_CV_flow$CV_flow * 0.057) + 0.53
 
 CVflow_plot <- ggplot() +
-  geom_line(data = x_CV_flow, aes(x = CV_flow, y=fit), color="blue") +
+  geom_line(data = x_CV_flow, aes(x = CV_flow, y=fit)) +
   geom_ribbon(data= x_CV_flow,
               aes(x = CV_flow, ymin = lower, ymax = upper),
               alpha= 0.3, fill="grey70") +
   xlab("CV of Streamflow") +
   ylab("ln(Average Predicted # of Strays)") + theme_classic() +
+  ylab("Attractiveness Index") + theme_classic() +
+  theme(axis.title = element_text(size = 15)) +
+  theme(axis.text = element_text(size = 14)) +
+  theme(text=element_text(family="Times New Roman")) +
   xlim(0.42, 0.61) + ylim(0, 20)
-CVflow_plot
+CVflow_plot #gives you a warning about 2 removed rows; that is because of the 
+#x-limit I set in the line above
 
 library(ggpubr)
-all_effects_plot <- ggarrange(WMA_plot, Cons_plot, CVflow_plot)
+all_effects_plot <- ggarrange(WMA_plot + rremove("ylab"),
+                              Cons_plot + rremove("ylab"),
+                              CVflow_plot + rremove("ylab"))
+all_effects_plot2 <- annotate_figure(all_effects_plot,
+                                     left = text_grob("Predicted Attractiveness Index",
+                                                      size = 15,
+                                     family = "Times", rot = 90)) #if you are
+#wondering, "rot = 90" rotates the y-axis label 90 degrees so that it is vertical
+all_effects_plot2
+
 #export high-res figure
-tiff('effects_plots.tiff', width = 10, height = 6.3, pointsize = 12,
+getwd()
+tiff('effects_plots.tiff', width = 8, height = 6.3, pointsize = 12,
      units = 'in', res = 300)
-all_effects_plot
+all_effects_plot2
 dev.off()
 
 
@@ -1270,5 +1312,5 @@ write.csv(tabs3, "Table_S3.csv")
 
 
 
-save.image("Mod_fit3.R")
+save.image("Mod_fit3.RData")
 load("Mod_fit3.R")

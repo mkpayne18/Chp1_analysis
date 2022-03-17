@@ -1,5 +1,15 @@
-#This script is the final official script for the model fitting process for the model that was #ultimately analyzed and described in my manuscript for chapter 1. See "Folder_Guide.Rmd" for 
-#more info on what the different Model_fittingX.R" files are
+#This script is the final official script for the model fitting process for the 
+#model that was ultimately analyzed and described in my manuscript for chapter 1.
+#See "Folder_Guide.Rmd" for more info on what the different Model_fittingX.R"
+#files are
+
+
+#Also, an important note: The model was ultimately fit with the removal of an 
+#outlier. So, beyond section 1 where I read in the data (immediately below), you
+#may skip ahead to section 7 to see the fitting process for the final model I 
+#used in the manuscript. Sections 2-6 are retained so you may see my whole process
+#from start to finish
+
 
 #1. Read in and tailor the data as necessary ###################################
 Master_dataset <- read.csv("Master_dataset.csv")
@@ -1313,4 +1323,4 @@ write.csv(tabs3, "Table_S3.csv")
 
 
 save.image("Mod_fit3.RData")
-load("Mod_fit3.R")
+load("Mod_fit3.RData")

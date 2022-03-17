@@ -234,10 +234,19 @@ tab3.1 <- fu_scaled %>% group_by(StreamName) %>%
 head(mean_bm1u_pred)
 tab3 <- left_join(tab3.1, mean_bm1u_pred)
 tab3 <- tab3[,c(1,5,6,2:4)]
-name_update <- c("Mean predicted number of strays", "Mean observed number of strays",
+name_update <- c("Mean predicted attractiveness index",
+                 "Mean observed attractiveness index",
                  "Minimum observed number of strays", "Maximum observed number of strays",
                  "Total number of surveys")
 tab3 <- tab3 %>% rename_at(2:6, ~name_update)
+tab3 <- tab3[order(tab3$`Mean predicted attractiveness index`, decreasing = T),]
+PAR <- 1:56
+tab3 <- cbind.data.frame(tab3, PAR)
+colnames(tab3)[7] <- "Predicted attractivenes rank"
+#add location data in case you need it
+head(Avg_strays_by_Yr_w_coords) #has location data by stream
+tab3 <- left_join(tab3, Avg_strays_by_Yr_w_coords, by = "StreamName")
+tab3 <- tab3[,c(1:7,10,11)]
 getwd()
 write.csv(tab3, "pred_obs_table.csv")
 

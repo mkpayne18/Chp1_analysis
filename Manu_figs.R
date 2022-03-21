@@ -286,6 +286,19 @@ write.csv(w, "Table_S3.csv")
 
 
 
+#Supplementary supplementary no zeroinfl plot ##################################
+#This plot is going into my model log document (Bayes_intrdo&Model_dev.docx), not
+#my manuscript (for now) in case someone wishes to see justification for why I 
+#did not account for zero-inflation in my model and why it honestly isn't really
+#necessary
+zeros <- bm1u_pred %>% filter(Observed == 0) #all predictions for each stream
+#year and their corresponding observed values. bm1u_pred object comes from
+#Mod_fit3.Rdata file
+plot(zeros$Observed ~ zeros$Predicted)
+hist(zeros$Predicted, breaks = 20)
+
+
+
 
 
 save.image("Manu_figs_objects.RData")

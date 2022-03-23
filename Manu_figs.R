@@ -12,7 +12,7 @@ Master_dataset$Year <- factor(Master_dataset$Year)
 
 #Figure 1. Observed number of strays + hatchery locations map ##################
 ################################################################################
-load("Mod_fit3.R") #load data that has mean attractiveness index by year for
+load("Mod_fit3.RData") #load data that has mean attractiveness index by year for
 #each stream
 mean_bm1u_pred
 #dataframe that has coordinates for each stream:
@@ -222,9 +222,116 @@ dev.off( ) #now the displayed graphs are saved to a file with the above file nam
 
 
 
+#Figure 3. Covariate effects plots #############################################
+# Cons_Abundance
+library(effects)
+effects_Cons <- effects::effect(term = "Cons_Abundance", mod = bm1u, xlevels = 10)
+summary(effects_Cons)
+x_Cons <- as.data.frame(effects_Cons)
 
-#effects plot code can be found in Model_fitting3.R because I made those directly
-#from datasets contained within that script file
+#there is probably a better way to do this, but here is my method for now:
+#un-scale the data
+mean(f_update$Cons_Abundance, na.rm = T) #3034
+sd(f_update$Cons_Abundance, na.rm = T) #4286
+x_Cons$Cons_Abundance <- (x_Cons$Cons_Abundance * 4286) + 3034
+
+#reduce range of observed data points
+trunc_Avg_strays <- f_update[f_update$Avg_number_strays < 10,]
+#create plot
+Cons_plot <- ggplot() +
+  geom_line(data = x_Cons, aes(x = Cons_Abundance, y=fit)) +
+  geom_ribbon(data= x_Cons,
+              aes(x = Cons_Abundance, ymin = lower, ymax = upper),
+              alpha= 0.3, fill="grey70") +
+  xlab("Chum Salmon Abundance") +
+  ylab("Attractiveness Index") + theme_classic() +
+  theme(axis.title = element_text(size = 15)) +
+  theme(axis.text = element_text(size = 14)) +
+  theme(text=element_text(family="Times New Roman")) #+
+#geom_point(data = trunc_Avg_strays, aes(x = Cons_Abundance,
+#y = Avg_number_strays)) #+ ylim(0, 20)
+Cons_plot
+
+
+# WMA_Releases_by_Yr
+effects_WMA <- effects::effect(term = "WMA_Releases_by_Yr", mod = bm1u, xlevels = 10)
+summary(effects_WMA)
+x_WMA <- as.data.frame(effects_WMA)
+
+#there is probably a better way to do this, but here is my method for now:
+#un-scale the data
+mean(f_update$WMA_Releases_by_Yr, na.rm = T) #16.3
+sd(f_update$WMA_Releases_by_Yr, na.rm = T) #27.6
+x_WMA$WMA_Releases_by_Yr <- (x_WMA$WMA_Releases_by_Yr * 27.6) + 16.3
+
+WMA_plot <- ggplot() +
+  geom_line(data = x_WMA, aes(x = WMA_Releases_by_Yr, y=fit)) +
+  geom_ribbon(data= x_WMA,
+              aes(x = WMA_Releases_by_Yr, ymin = lower, ymax = upper),
+              alpha= 0.3, fill="grey70") +
+  xlab("Number of Fish Released within 40KM") +
+  ylab("Attractiveness Index") + theme_classic() +
+  theme(axis.title = element_text(size = 15)) +
+  theme(axis.text = element_text(size = 14)) +
+  theme(text=element_text(family="Times New Roman")) #+
+#geom_point(data = trunc_Avg_strays, aes(x = WMA_Releases_by_Yr,
+#y = Avg_number_strays))#+ ylim(0, 20)
+WMA_plot
+
+
+
+# CV_flow
+effects_CV_flow <- effects::effect(term = "CV_flow", mod = bm1u, xlevels = 10)
+summary(effects_CV_flow)
+x_CV_flow <- as.data.frame(effects_CV_flow)
+
+#there is probably a better way to do this, but here is my method for now:
+#un-scale the data
+mean(f_update$CV_flow, na.rm = T) #0.53
+sd(f_update$CV_flow, na.rm = T) #0.057
+x_CV_flow$CV_flow <- (x_CV_flow$CV_flow * 0.057) + 0.53
+
+CVflow_plot <- ggplot() +
+  geom_line(data = x_CV_flow, aes(x = CV_flow, y=fit)) +
+  geom_ribbon(data= x_CV_flow,
+              aes(x = CV_flow, ymin = lower, ymax = upper),
+              alpha= 0.3, fill="grey70") +
+  xlab("CV of Streamflow") +
+  ylab("ln(Average Predicted # of Strays)") + theme_classic() +
+  ylab("Attractiveness Index") + theme_classic() +
+  theme(axis.title = element_text(size = 15)) +
+  theme(axis.text = element_text(size = 14)) +
+  theme(text=element_text(family="Times New Roman")) +
+  xlim(0.42, 0.61) + ylim(0, 20)
+CVflow_plot #gives you a warning about 2 removed rows; that is because of the 
+#x-limit I set in the line above
+
+library(ggpubr)
+all_effects_plot <- ggarrange(WMA_plot + rremove("ylab"),
+                              Cons_plot + rremove("ylab"),
+                              CVflow_plot + rremove("ylab"))
+all_effects_plot2 <- annotate_figure(all_effects_plot,
+                                     left = text_grob("Predicted Attractiveness Index",
+                                                      size = 15,
+                                                      family = "Times", rot = 90)) #if you are
+#wondering, "rot = 90" rotates the y-axis label 90 degrees so that it is vertical
+all_effects_plot2
+
+#export high-res figure
+getwd()
+tiff('effects_plots.tiff', width = 8, height = 6.3, pointsize = 12,
+     units = 'in', res = 300)
+all_effects_plot2
+dev.off()
+
+
+strays_range <- fu_scaled %>% group_by(StreamName) %>%
+  summarise_at(vars(Avg_number_strays), list(mean, min, max))
+View(strays_range)
+
+
+
+
 
 
 #Table 3: pred and observed values #############################################
@@ -277,12 +384,13 @@ v <- Releases_site_year %>% group_by(YearReleased) %>%
   summarise(Sum = sum(SUM_Releases_in_millions))
 View(v)
 
-#Table S3 stuff ################################################################
-#Using the dataframe "f" from Model_fitting3.R:
-w <- f[ , c(1:5, 8)]
-View(w)
-setwd("~/Documents/CHUM THESIS/Manuscript/Figures")
-write.csv(w, "Table_S3.csv")
+
+
+
+#Table S3: Individual stream survey info #######################################
+tabs3 <- fu_scaled[,c(2:7)]
+head(tabs3)
+write.csv(tabs3, "Table_S3.csv")
 
 
 

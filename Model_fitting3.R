@@ -9,6 +9,16 @@
 #may skip ahead to section 7 to see the fitting process for the final model I 
 #used in the manuscript. Sections 2-6 are retained so you may see my whole process
 #from start to finish
+library(tidyverse)
+library(dplyr)
+library(corrgram)
+library(Hmisc)
+library(lme4)
+library(MuMIn)
+library(MASS)
+library(lattice)
+library(performance)
+library(caret)
 
 
 #1. Read in and tailor the data as necessary ###################################
@@ -21,8 +31,6 @@ str(Master_dataset)
 #remove Chilkat River, Disappearance Creek, Black River, Saook Bay West Head in
 #2010 only, and Herman Creek from analysis. These creeks were sampled either 
 #really late bc they are fall-run (Chilkat + Dis.Creek), or early (before 7/20).
-library(tidyverse)
-library(dplyr)
 delete <- c("Chilkat River", "Disappearance Creek", "Black River", "Herman Creek")
 f <- Master_dataset[!(Master_dataset$StreamName %in% delete),]
 #only delete 2010 for Saook Bay West Head, not 2011:
@@ -320,8 +328,6 @@ curve(predict(fit, newdata = data.frame(f_means=x)), add=T)
 #4.2. Fit global model with negative binomial distribution =====================
 #Curry says you should fit and compare models using REML = FALSE. Based on google
 #search, I believe the default for glmer.nb does not use REML
-library(lme4)
-library(MuMIn)
 #Global model:
 stray_1 <- glmer.nb(Avg_number_strays ~ (1|Year) + Fishery_harvest +
                       Cons_Abundance + Pink_Abundance + WMA_Releases_by_Yr +
@@ -477,7 +483,12 @@ straymod_dredge <- dredge(stray_3, rank = "AICc")
 
 head(straymod_dredge)
 #The top two models account for 78% of the total model weight, so I will average
-#the results from those two and disregard the remaining models
+#the results from those two and disregard the remaining models (I never actually
+#end up doing the model averaging for these two models below bc I find in section
+#6 that there is an outlier worth removing, therefore I fit new models using an
+#updated dataset in section 7. If you do end up returning to these two models here
+#do NOT average their predictions Just use bm1. See note in section 7.3 for why
+#this is)
 bm1 <- glmer.nb(Avg_number_strays ~ (1|Year) + Cons_Abundance + WMA_Releases_by_Yr
                 + CV_flow + I(CV_flow^2), data = f_scaled) #'bm' for "best model"
 bm2 <- glmer.nb(Avg_number_strays ~ (1|Year) + Fishery_harvest + Cons_Abundance +
@@ -495,7 +506,6 @@ bm2 <- glmer.nb(Avg_number_strays ~ (1|Year) + Fishery_harvest + Cons_Abundance 
 
 #5. Model diagnostics ##########################################################
 #5.1. Compare to null model ====================================================
-library(MASS)
 AICc(bm1, bm2, glm.nb(Avg_number_strays ~ 1, data = f_scaled)) #null model is 
 #significantly worse
 AICc(bm1, bm2, glmer.nb(Avg_number_strays ~ (1|Year), data = f_scaled)) #also true
@@ -510,7 +520,7 @@ par(mfrow=c(1,1))
 plot(residuals(bm1, type = "deviance") ~ fitted(bm1), main = "Model #1-outlier included")
 plot(residuals(bm2, type = "deviance") ~ fitted(bm2), main = "Model #2-outlier included")
 
-### For manuscript: ggplot2 version
+### For manuscript: ggplot2 version which compares models with and w/o outlier
 outlieryes <- data.frame(deviance_resid = residuals(bm1, type = "deviance"),
                         pred = fitted(bm1))
 dev_outlieryes <- ggplot(outlieryes, aes(pred, deviance_resid)) + geom_point() +
@@ -569,16 +579,15 @@ ggplot(data.frame(lev = hatvalues(bm2),
 
 #5.3. Random effect diagnostics ================================================
 #Random effect should be normally distributed
-library(lattice)
-qqmath(lme4::ranef(bm1)) 
+qqmath(lme4::ranef(bm1)) #qqmath from library(lattice)
 qqmath(lme4::ranef(bm2)) 
 #All look approximately normally distributed
 
 #Intraclass correlation coefficient
-library(performance)
-icc(bm1)
+icc(bm1) #icc from library(performance)
 icc(bm2)
 #none are = 0, indicating that random effects are necessary 
+
 
 
 #5.4. Check for temporal autocorrelation =======================================
@@ -595,9 +604,9 @@ temp(bm1, f_scaled)
 temp(bm2, f_scaled) #no evidence of temporal autocorrelation
 
 
+
 #5.5. Cross-validate each model ================================================
 ### Calculate the mean absolute error for each model
-library(caret)
 mean_mae <- vector(length = 10)
 mae_bm1 <- vector(length = 500)
 #Note that the prediction accuracy varies greatly depending on how large the obs.
@@ -712,7 +721,7 @@ abline(0,1)
 abline(lm(Observed ~ Predicted, data = stray_4_pred), col = "red")
 #Seems to predict slightly better without outlier
 
-### Cross-validate model without outlier
+### Cross-validate top model without outlier
 mean_mae_no_outlier <- vector(length = 10)
 mae_stray_4 <- vector(length = 500)
 #Note that the prediction accuracy varies greatly depending on how large the obs.
@@ -751,6 +760,8 @@ mean(mean_mae_no_outlier) #for f_scaled (full dataset including large obs. value
 
 
 
+
+
 #7. Refit model without outlier (Ketchikan Creek 2010) #########################
 #7.1 EDA =======================================================================
 ### Create dataframe
@@ -778,9 +789,9 @@ library(corrgram) #visually assess first
 corrgram(f_update[ , c(10:19)])
 
 library(Hmisc)
-stray_vars <- as.matrix(f_update[ , c(10:19)])  # Save variables as a matrix 
-COR <- rcorr(stray_vars, type = "spearman")
-COR$r #Same conclusions as before. Remove Cons_Density, Pink_Density, Dist_
+stray_vars2 <- as.matrix(f_update[ , c(10:19)])  # Save variables as a matrix 
+COR2 <- rcorr(stray_vars2, type = "spearman")
+COR2$r #Same conclusions as before. Remove Cons_Density, Pink_Density, Dist_
 #nearest_H, and Dist_nearest_R due to collinearity
 f_update <- f_update[ , -c(12,14,16,17)]
 
@@ -939,7 +950,7 @@ stray_2u <- glmer.nb(Avg_number_strays ~ (1|Year) + Cons_Abundance +
                        Pink_Abundance + WMA_Releases_by_Yr + CV_flow +
                        I(CV_flow^2), data = fu_scaled)
 summary(stray_2u) #no correlations > 0.5, but Pink_Abundance and CV_flow cor = 0.45
-car::vif(stray_2u) #all are < 1.5
+car::vif(stray_2u) #all are <= 1.5
 AICc(stray_2u, REML = F) #868.51
 
 
@@ -1007,12 +1018,24 @@ bm2u <- glmer.nb(Avg_number_strays ~ (1|Year) + WMA_Releases_by_Yr + CV_flow +
 #differ), so I think my approach is acceptable
 
 
+### UPDATE 3/22/22 ###
+#I will not average the two models' predictions anymore, based on coauthor sugg-
+#estion to not go to the trouble of doing so bc the top model accounts for most
+#of the weight and had a slightly higher AICc despite having an additionl covar-
+#iate. Therefore, you should be able to explain patterns in straying OK with
+#just the top model. However, I retain the second model (bm2u) because it will
+#be needed for chapter 2 analysis
+
+
+
+
 #7.4. Model diagnostics ########################################################
 ### Compare to null model
 AICc(bm1u, bm2u, glm.nb(Avg_number_strays ~ 1, data = fu_scaled)) #null model is 
 #significantly worse
 AICc(bm1u, bm2u, glmer.nb(Avg_number_strays ~ (1|Year), data = fu_scaled)) #also
-#true with Year as random intercept
+#true with Year as random intercept. Note that I think the true null model is this
+#one; the one that includes the random effect
 
 lmtest::lrtest(bm1u, glmer.nb(Avg_number_strays ~ (1|Year), data = fu_scaled))
 
@@ -1091,19 +1114,19 @@ ggplot(data.frame(lev = hatvalues(bm2u),
 
 ### Random effect diagnostics 
 #Random effect should be normally distributed
-library(lattice)
 qqmath(lme4::ranef(bm1u)) 
 qqmath(lme4::ranef(bm2u)) 
 #All look approximately normally distributed
 
 #Intraclass correlation coefficient
-library(performance)
 icc(bm1u)
 icc(bm2u)
 #none are = 0, indicating that random effects are necessary 
 
 
-### Check for temporal autocorrelation 
+
+
+### Check for temporal autocorrelation ###
 par(mfrow=c(1,1))
 temp <- function(mod, dat){
   E <- residuals(mod, type = "deviance")
@@ -1117,39 +1140,69 @@ temp(bm1u, fu_scaled)
 temp(bm2u, fu_scaled) #no evidence of temporal autocorrelation
 
 
-### Cross validate the model
-mean_mae_bm1u <- vector(length = 10)
-mae_bm1u <- vector(length = 500)
+
+
+### Cross validate the model ###
+cross_val <- function(dat, mod, mae_vec, mean_mae_vec){
+  for(j in 1:10){
+    for (i in 1:500) {
+      train <- dat %>% 
+        group_by(Year) %>% mutate(group = sample(n())/n() > 0.7) #0.7 for a 70-30
+      #cross-validation
+      
+      splitdf <- split(train, train$group)
+      training <- splitdf[["FALSE"]]
+      test <- splitdf[["TRUE"]]
+      
+      predictions <- mod %>% predict(test) 
+      exp.pred <- exp(predictions)
+      mae <- MAE(exp.pred, test$Avg_number_strays, na.rm = TRUE)
+      mae_vec[i] <- mae
+    }
+    mean_mae_vec[j] <- mean(mae_vec)
+  }
+  return(mean(mean_mae_vec))
+}
+
 #Note that the prediction accuracy varies greatly depending on how large the obs.
 #value is (much greater error for large values because there are fewer of them).
 #Observe this by excluding the largest observed values in the model fitting with
-#the sub_f_scaled dataset
+#the sub_fu_scaled dataset vs full fu_scaled dataset
 sub_fu_scaled <- fu_scaled[fu_scaled$Avg_number_strays < 20,]
-#Best model (bm1u):
-for(j in 1:10){
-  for (i in 1:500) {
-    train <- sub_fu_scaled %>% #change data between fu_scaled and sub_fu_scaled
-      group_by(Year) %>% mutate(group = sample(n())/n() > 0.7) #0.7 for a 70-30
-    #cross-validation
-    
-    splitdf <- split(train, train$group)
-    training <- splitdf[["FALSE"]]
-    test <- splitdf[["TRUE"]]
-    
-    predictions <- bm1u %>% predict(test)
-    #remember to exp() bc the glmer.nb output is in log space
-    exp.pred <- exp(predictions)
-    mae <- MAE(exp.pred, test$Avg_number_strays, na.rm = TRUE)
-    mae_bm1u[i] <- mae
-  }
-  mean_mae_bm1u[j] <- mean(mae_bm1u)
-}
-mean_mae_bm1u
-mean(mean_mae_bm1u) #for fu_scaled (full dataset including large obs. values),
-#the mean MAE is 6.29, For sub_fu_scaled, it is only 3.86
+
+#Top model 
+mean_mae_bm1u <- vector(length = 10)
+mae_bm1u <- vector(length = 500)
+cross_val(fu_scaled, bm1u, mae_bm1u, mean_mae_bm1u) #for fu_scaled (full dataset
+#including large obs. values), the mean MAE is 6.27
+cross_val(sub_fu_scaled, bm1u, mae_bm1u, mean_mae_bm1u) #for sub_fu_scaled, the
+#mean MAE is 3.86 
+
+#Second best model
+mean_mae_bm2u <- vector(length = 10)
+mae_bm2u <- vector(length = 500)
+cross_val(fu_scaled, bm2u, mae_bm2u, mean_mae_bm2u) #for fu_scaled (full dataset
+#including large obs. values), the mean MAE is 6.44
+cross_val(sub_fu_scaled, bm2u, mae_bm2u, mean_mae_bm2u) #for sub_fu_scaled, the
+#mean MAE is 3.90
+
+
+#Null model 
+null_mod <- glmer.nb(Avg_number_strays ~ (1|Year), data = fu_scaled,
+                     control=glmerControl(optCtrl=list(maxfun=20000)))
+mean_mae_null <- vector(length = 10)
+mae_null <- vector(length = 500)
+cross_val(fu_scaled, null_mod, mae_null, mean_mae_null) #for fu_scaled (full dataset
+#including large obs. values), the mean MAE is 9.93
+cross_val(sub_fu_scaled, null_mod, mae_null, mean_mae_null) #for sub_fu_scaled,
+#the mean MAE is 5.65
+
+
 
 
 ### Examine predicted values 
+#ONLY MAKE PREDICTIONS FOR TOP MODEL, do not model average (3/22/22 update as per
+#co-author suggestion)
 bm1u_pred <- as.data.frame(fitted(bm1u))
 bm1u_pred <- cbind.data.frame(fu_scaled$Year, fu_scaled$StreamName, bm1u_pred,
                              fu_scaled$Avg_number_strays)
@@ -1162,12 +1215,6 @@ abline(0,1)
 abline(lm(Observed ~ Predicted, data = bm1u_pred), col = "red")
 
 #ggplot version for manuscript
-install.packages("extrafont") #to get the Times New Roman font
-library(extrafont)
-font_import()
-loadfonts()
-fonts()
-
 lm_no <-lm(Observed ~ Predicted, data = bm1u_pred) #"no" for no outlier
 summary(lm_no)
 OP_outlierno <- ggplot(bm1u_pred, aes(Predicted, Observed)) + geom_point() +
@@ -1201,123 +1248,6 @@ plot(Mean_obs_strays ~ Mean_pred_strays, data = mean_bm1u_pred,
 abline(0,1)
 abline(lm(Mean_obs_strays ~ Mean_pred_strays, data = mean_bm1u_pred), col = "red")
 
-
-
-
-
-
-### Effects plot for covariates ################################################
-# Cons_Abundance
-library(effects)
-effects_Cons <- effects::effect(term = "Cons_Abundance", mod = bm1u, xlevels = 10)
-summary(effects_Cons)
-x_Cons <- as.data.frame(effects_Cons)
-
-#there is probably a better way to do this, but here is my method for now:
-#un-scale the data
-mean(f_update$Cons_Abundance, na.rm = T) #3034
-sd(f_update$Cons_Abundance, na.rm = T) #4286
-x_Cons$Cons_Abundance <- (x_Cons$Cons_Abundance * 4286) + 3034
-
-#reduce range of observed data points
-trunc_Avg_strays <- f_update[f_update$Avg_number_strays < 10,]
-#create plot
-Cons_plot <- ggplot() +
-  geom_line(data = x_Cons, aes(x = Cons_Abundance, y=fit)) +
-  geom_ribbon(data= x_Cons,
-              aes(x = Cons_Abundance, ymin = lower, ymax = upper),
-              alpha= 0.3, fill="grey70") +
-  xlab("Chum Salmon Abundance") +
-  ylab("Attractiveness Index") + theme_classic() +
-  theme(axis.title = element_text(size = 15)) +
-  theme(axis.text = element_text(size = 14)) +
-  theme(text=element_text(family="Times New Roman")) #+
-  #geom_point(data = trunc_Avg_strays, aes(x = Cons_Abundance,
-                                          #y = Avg_number_strays)) #+ ylim(0, 20)
-Cons_plot
-
-
-# WMA_Releases_by_Yr
-effects_WMA <- effects::effect(term = "WMA_Releases_by_Yr", mod = bm1u, xlevels = 10)
-summary(effects_WMA)
-x_WMA <- as.data.frame(effects_WMA)
-
-#there is probably a better way to do this, but here is my method for now:
-#un-scale the data
-mean(f_update$WMA_Releases_by_Yr, na.rm = T) #16.3
-sd(f_update$WMA_Releases_by_Yr, na.rm = T) #27.6
-x_WMA$WMA_Releases_by_Yr <- (x_WMA$WMA_Releases_by_Yr * 27.6) + 16.3
-
-WMA_plot <- ggplot() +
-  geom_line(data = x_WMA, aes(x = WMA_Releases_by_Yr, y=fit)) +
-  geom_ribbon(data= x_WMA,
-              aes(x = WMA_Releases_by_Yr, ymin = lower, ymax = upper),
-              alpha= 0.3, fill="grey70") +
-  xlab("Number of Fish Released within 40KM") +
-  ylab("Attractiveness Index") + theme_classic() +
-  theme(axis.title = element_text(size = 15)) +
-  theme(axis.text = element_text(size = 14)) +
-  theme(text=element_text(family="Times New Roman")) #+
-  #geom_point(data = trunc_Avg_strays, aes(x = WMA_Releases_by_Yr,
-                                          #y = Avg_number_strays))#+ ylim(0, 20)
-WMA_plot
-
-
-
-# CV_flow
-effects_CV_flow <- effects::effect(term = "CV_flow", mod = bm1u, xlevels = 10)
-summary(effects_CV_flow)
-x_CV_flow <- as.data.frame(effects_CV_flow)
-
-#there is probably a better way to do this, but here is my method for now:
-#un-scale the data
-mean(f_update$CV_flow, na.rm = T) #0.53
-sd(f_update$CV_flow, na.rm = T) #0.057
-x_CV_flow$CV_flow <- (x_CV_flow$CV_flow * 0.057) + 0.53
-
-CVflow_plot <- ggplot() +
-  geom_line(data = x_CV_flow, aes(x = CV_flow, y=fit)) +
-  geom_ribbon(data= x_CV_flow,
-              aes(x = CV_flow, ymin = lower, ymax = upper),
-              alpha= 0.3, fill="grey70") +
-  xlab("CV of Streamflow") +
-  ylab("ln(Average Predicted # of Strays)") + theme_classic() +
-  ylab("Attractiveness Index") + theme_classic() +
-  theme(axis.title = element_text(size = 15)) +
-  theme(axis.text = element_text(size = 14)) +
-  theme(text=element_text(family="Times New Roman")) +
-  xlim(0.42, 0.61) + ylim(0, 20)
-CVflow_plot #gives you a warning about 2 removed rows; that is because of the 
-#x-limit I set in the line above
-
-library(ggpubr)
-all_effects_plot <- ggarrange(WMA_plot + rremove("ylab"),
-                              Cons_plot + rremove("ylab"),
-                              CVflow_plot + rremove("ylab"))
-all_effects_plot2 <- annotate_figure(all_effects_plot,
-                                     left = text_grob("Predicted Attractiveness Index",
-                                                      size = 15,
-                                     family = "Times", rot = 90)) #if you are
-#wondering, "rot = 90" rotates the y-axis label 90 degrees so that it is vertical
-all_effects_plot2
-
-#export high-res figure
-getwd()
-tiff('effects_plots.tiff', width = 8, height = 6.3, pointsize = 12,
-     units = 'in', res = 300)
-all_effects_plot2
-dev.off()
-
-
-strays_range <- fu_scaled %>% group_by(StreamName) %>%
-  summarise_at(vars(Avg_number_strays), list(mean, min, max))
-View(strays_range)
-
-
-#Table S3: Individual stream survey info #######################################
-tabs3 <- fu_scaled[,c(2:7)]
-head(tabs3)
-write.csv(tabs3, "Table_S3.csv")
 
 
 

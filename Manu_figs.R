@@ -1,6 +1,11 @@
 #Note that some figures and tables made more sense to create in Model_fitting3.R,
 #so if you can't find the code for a figure you expected to find here then check
-#that script 
+#that script
+library(ggplot2)
+library(ggmap)
+library(ggspatial)
+library(ggsn)
+library(ggpubr)
 
 
 setwd("~/Documents/CHUM_THESIS/Analysis")
@@ -43,18 +48,13 @@ Hatchery_Locations <- read_csv("~/Documents/CHUM_THESIS/Data Sources/Hatchery_Lo
 #remove Wally Noerenberg and Nitinat River hatcherys
 Hatchery_Locations <- Hatchery_Locations[c(1:12), ]
 
-library(extrafont)
-font_import()
-loadfonts()
-fonts()
 
-library(ggmap)
 myMap <- get_stamenmap(location <- c(-137, 54.5, -130, 59.5), zoom = 6,
                        maptype = "terrain-background", crop = TRUE)
 ggmap(myMap)
 fig1 <- ggmap(myMap) + geom_point(aes(x = Longitude, y = Latitude,
-                                      size = Number_of_Surveys,
-                                      fill = Mean_obs_strays),
+                                      size = Mean_obs_strays,
+                                      fill = Number_of_Surveys),
                                   colour = "black", pch = 21,
                                   data = Avg_strays_by_Yr_w_coords) +
   scale_size_continuous(range = c(2, 10)) +
@@ -62,9 +62,20 @@ fig1 <- ggmap(myMap) + geom_point(aes(x = Longitude, y = Latitude,
   theme(axis.title = element_text(size = 13)) +
   theme(legend.text = element_text(size = 11.5)) +
   theme(legend.title = element_text(size = 14)) +
-  theme(legend.key=element_blank()) + labs(size = "Number of Surveys",
-                                           fill = "Mean Observed Index") +
-  theme(text=element_text(family="Times New Roman", size=12))
+  theme(legend.key=element_blank()) + labs(size = "Mean Observed Index",
+                                           fill = "Number of Surveys") +
+  theme(text=element_text(family="Times New Roman", size=12)) +
+  ggspatial::annotation_north_arrow( #direction arrow code chunk
+    location = "bl", which_north = "true",
+    pad_x = unit(0.4, "in"), pad_y = unit(0.4, "in"),
+    style = ggspatial::north_arrow_nautical(
+      fill = c("grey40", "white"),
+      line_col = "grey20",
+      text_family = "Times New Roman")) +
+  scalebar(x.min = -136.9, x.max = -134.9, y.min = 54.75,
+           y.max = 54.95, dist = 50, dist_unit = "km",
+           transform = T, height = 0.4, st.dist = 0.6,
+           st.size = 4)
 fig1
 
 #to add hatchery locations to the map AND have them be included in the legend:
@@ -107,13 +118,6 @@ fig1b <- fig1a + inset(grob = ggplotGrob(alaska), xmin = -133, xmax = -130,
                        ymin = 58.2, ymax = 59.55) 
 fig1b
 
-#add scale bar and north arrow
-library(ggsn)
-fig1c <- fig1b + scalebar(x.min = -137.2, x.max = -135.2, y.min = 54.8, y.max = 55, 
-                          dist = 50, dist_unit = "km", transform = T, height = 0.5,
-                          st.dist = 0.6, st.size = 5)
-north2(fig1c, x = 0.18, y = 0.20, symbol = 3)
-
 
 
 #IN GRAYSCALE:
@@ -130,7 +134,18 @@ fig1_bw <- ggmap(myMap) + geom_point(aes(x = Longitude, y = Latitude,
   theme(legend.text = element_text(size = 11.5)) +
   theme(legend.title = element_text(size = 14)) +
   theme(legend.key=element_blank()) + labs(size = "# of Surveys") +
-  labs(fill = "Average # of Strays")
+  labs(fill = "Average # of Strays") +
+  ggspatial::annotation_north_arrow( #direction arrow code chunk
+    location = "bl", which_north = "true",
+    pad_x = unit(0.4, "in"), pad_y = unit(0.4, "in"),
+    style = ggspatial::north_arrow_nautical(
+      fill = c("grey40", "white"),
+      line_col = "grey20",
+      text_family = "Times New Roman")) +
+  scalebar(x.min = -136.9, x.max = -134.9, y.min = 54.75,
+           y.max = 54.95, dist = 50, dist_unit = "km",
+           transform = T, height = 0.4, st.dist = 0.6,
+           st.size = 4)
 fig1_bw
 
 fig1a_bw <-fig1_bw + scale_fill_gradientn(colours = c("grey72", "grey50", "grey38",
@@ -152,19 +167,13 @@ fig1b_bw <- fig1a_bw + geom_point(data = Hatchery_Locations, aes(x = Longitude,
 #add inset map
 fig1c_bw <- fig1b_bw + inset(grob = ggplotGrob(alaska), xmin = -132.5,
                              xmax = -130, ymin = 58.2, ymax = 59.75) 
-#add scalebar
-fig1d_bw <- fig1c_bw + scalebar(x.min = -137, x.max = -135, y.min = 54.8,
-                                y.max = 55, dist = 50, dist_unit = "km",
-                                transform = T, height = 0.5, st.dist = 0.6,
-                                st.size = 5)
-#add north arrow
-north2(fig1d_bw, x = 0.2, y = 0.22, symbol = 3)
+
 
 
 #Export as high-res figure
 setwd("~/Documents/CHUM_THESIS/Analysis/Figs_Results")
 tiff("fig1.tiff", width = 7, height = 6, pointsize = 12, units = 'in', res = 300)
-north2(fig1c, x = 0.18, y = 0.20, symbol = 3) #graph that you want to export
+fig1b
 dev.off( ) #now the displayed graphs are saved to a file with the above file name
 
 
@@ -218,6 +227,7 @@ t.test(onsite, Remote) #streams near hatchery on-site releases averaged 19.3 str
 tiff("fig3.tiff", width = 7, height = 5, pointsize = 12, units = 'in', res = 300)
 fig3 #graph that you want to export
 dev.off( ) #now the displayed graphs are saved to a file with the above file name
+
 
 
 
@@ -306,7 +316,6 @@ CVflow_plot <- ggplot() +
 CVflow_plot #gives you a warning about 2 removed rows; that is because of the 
 #x-limit I set in the line above
 
-library(ggpubr)
 all_effects_plot <- ggarrange(WMA_plot + rremove("ylab"),
                               Cons_plot + rremove("ylab"),
                               CVflow_plot + rremove("ylab"))
@@ -316,6 +325,7 @@ all_effects_plot2 <- annotate_figure(all_effects_plot,
                                                       family = "Times", rot = 90)) #if you are
 #wondering, "rot = 90" rotates the y-axis label 90 degrees so that it is vertical
 all_effects_plot2
+
 
 #export high-res figure
 getwd()
@@ -356,6 +366,8 @@ tab3 <- left_join(tab3, Avg_strays_by_Yr_w_coords, by = "StreamName")
 tab3 <- tab3[,c(1:7,10,11)]
 getwd()
 write.csv(tab3, "pred_obs_table.csv")
+
+
 
 
 
@@ -409,5 +421,141 @@ hist(zeros$Predicted, breaks = 20)
 
 
 
+#Supplementary correlation matrix table (or is it a figure?) ###################
+library(ggcorrplot)
+COR #from Model_fitting3.R objects
+ggcorrplot(COR$r, lab = T) +
+  theme(text=element_text(family="Times New Roman", size=12)) #hmm, doesn't seem
+#like you can change the font of the numbers within the corrplot, only the labels.
+#I would leave it be for now and see if the grad school notices. You can always
+#come back and make a correlation matrix using some other package
+
+#Export as high-res figure
+setwd("~/Documents/CHUM_THESIS/Analysis/Figs_Results")
+tiff("corr_matrix.tiff", width = 7, height = 6, pointsize = 12, units = 'in', res = 300)
+ggcorrplot(COR$r, lab = T) +
+  theme(text=element_text(family="Times New Roman", size=12)) #graph that you want to export
+dev.off( ) #now the displayed graphs are saved to a file with the above file name
+
+
+
+
+
+
+#Supplementary model residuals plots ###########################################
+dev_resid <- data.frame(deviance_resid = residuals(bm1u, type = "deviance"),
+                        pred = fitted(bm1u))
+dev_resid_plot <- ggplot(dev_resid, aes(pred, deviance_resid)) + geom_point() +
+  xlab("Model predicted values") + ylab("Deviance residuals") + theme_bw() +
+  theme(text=element_text(family="Times New Roman", size=14),
+        plot.margin = margin(8, 8, 10, 8))
+dev_resid_plot
+
+
+
+pea_resid <- data.frame(pearson_resid = residuals(bm1u, type = "pearson"),
+                        pred = fitted(bm1u))
+pea_resid_plot <- ggplot(pea_resid, aes(pred, pearson_resid)) + geom_point() +
+  xlab("Model predicted values") + ylab("Pearson residuals") + theme_bw() +
+  theme(text=element_text(family="Times New Roman", size=14),
+        plot.margin = margin(8, 8, 10, 8))
+pea_resid_plot
+
+
+resid_plots <- ggarrange(dev_resid_plot, pea_resid_plot, ncol = 2)
+resid_plots
+
+#Export as high-res figure
+tiff("resid_plots.tiff", width = 8, height = 4, pointsize = 12, units = 'in',
+     res = 300)
+resid_plots #graph that you want to export
+dev.off( ) #now the displayed graphs are saved to a file with the above file name
+
+
+
+
+
+#Stream pHOS averages from Josephson et al. 2021 ###############################
+#At the start of page 7 in the manuscript (methods section), I talk about the 
+#pHOS of SEAK streams from the findings of Josephson et al. 2021. In the edits
+#of chum_v5, Curry said that I should report the stream specific average pHOS
+#range, instead of the range of all pHOS values. Here is where I calculate that:
+
+#Using 2013-2015 vals from chapter 1 data (bc that is the data that Josephson et
+#al. 2021 used)
+X2013_2015 <- Master_dataset %>% filter(Year %in% c("2013", "2014", "2015"))
+X2013_2015 <- X2013_2015[,c(1:5)]
+X2013_2015$pHOS <- X2013_2015$Number_H_fish/X2013_2015$Total_fish_sampled
+pHOS_mean_by_stream <- X2013_2015 %>% group_by(StreamName) %>%
+  summarise(Mean_pHOS = mean(pHOS))
+split2 <- split(pHOS_mean_by_stream, pHOS_mean_by_stream$Mean_pHOS < 0.05)
+length(split2[[1]]$Mean_pHOS) #the pHOS streams that are > 0.05; 10 total
+mean(split2[[1]]$Mean_pHOS)
+range(split2[[1]]$Mean_pHOS) #report in paper, along with mean in line above
+
+
+
+
+
+#Observed ~ predicted values plot ##############################################
+#Can also be found near end of section 7.4 of Model_fitting3.R because I was using
+#this plot during analysis to evaluate predictions
+lm_no <-lm(Observed ~ Predicted, data = bm1u_pred) #"no" for no outlier, which
+#doesn't matter anymore bc I'm not graphically comparing pre- and post-outlier
+#models anymore. I left the lm name the same though so you could find the matching
+#code in Model_fitting3.R script
+summary(lm_no)
+OP_outlierno <- ggplot(bm1u_pred, aes(Predicted, Observed)) + geom_point() +
+  #co-author Megan says to not include regression and 1:1 lines on plot
+  #geom_abline(slope = 0.751, intercept = 1.63) +
+  #geom_abline(slope = 1, intercept = 1, linetype = "dashed") +
+  theme_bw() +
+  theme(text=element_text(family="Times New Roman", size=14),
+        plot.margin = margin(10, 12, 10, 10))
+OP_outlierno2 <- OP_outlierno + coord_cartesian(clip = "off")
+OP_outlierno2
+
+
+#Export as high-res figure
+tiff("obs_pred_plot.tiff", width = 6, height = 4, pointsize = 12, units = 'in',
+     res = 300)
+OP_outlierno2 #graph that you want to export
+dev.off( ) 
+
+
+
+
+
+
+#CV_flow plot ##################################################################
+load("CVflow_side.Rdata")
+flow_plus$class_1 <- as.factor(flow_plus$class_1) #"class" needs to be a factor
+#reorder it to show same watershed types next to each other on boxplot:
+flow_plus$class_1 <- factor(flow_plus$class_1, levels = c("0", "3", "10",
+                                                          "1", "2", "4", "5",
+                                                          "8", "6"))
+
+flow_plot <- ggplot(flow_plus) +
+  geom_boxplot(aes(x = class_1, y = CV_flow)) +
+  labs(x = "Watershed Type", y = "CV of Streamflow") +
+  theme_bw() +
+  theme(text = element_text(family = "Times New Roman", size = 16)) +
+  #theme(axis.text.x = element_text(angle = 90)) +
+  scale_x_discrete(labels = c("0" = "Rain-0", "1" = "Snow-1", "2" = "Snow-2",
+                              "3" = "Rain-3", "4" = "Snow-4", "5" = "Snow-5",
+                              "6" = "Glacier-6", "8" = "Rain-snow-8",
+                              "10" = "Rain-10"))
+flow_plot
+
+#Export as high-res figure
+tiff("CVflow_side_plot.tiff", width = 8.5, height = 4.2, pointsize = 12, units = 'in',
+     res = 300)
+flow_plot #graph that you want to export
+dev.off( ) 
+
+
+
+
+
 save.image("Manu_figs_objects.RData")
-load("Manu_figs_objects.R")
+load("Manu_figs_objects.RData")

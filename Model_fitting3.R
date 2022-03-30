@@ -1043,8 +1043,10 @@ lmtest::lrtest(bm1u, glmer.nb(Avg_number_strays ~ (1|Year), data = fu_scaled))
 ### Residual diagnostics
 ### (Deviance) residuals ~ fitted values plot 
 par(mfrow=c(1,1))
-plot(residuals(bm1u, type = "deviance") ~ fitted(bm1u), main = "Model #1-outlier removed")
-plot(residuals(bm2u, type = "deviance") ~ fitted(bm2u), main = "Model #2-outlier removed")
+plot(residuals(bm1u, type = "deviance") ~ fitted(bm1u),
+     main = "Model #1-outlier removed")
+plot(residuals(bm2u, type = "deviance") ~ fitted(bm2u),
+     main = "Model #2-outlier removed")
 
 
 ### For manuscript: ggplot2 version of deviance residuals
@@ -1218,8 +1220,10 @@ abline(lm(Observed ~ Predicted, data = bm1u_pred), col = "red")
 lm_no <-lm(Observed ~ Predicted, data = bm1u_pred) #"no" for no outlier
 summary(lm_no)
 OP_outlierno <- ggplot(bm1u_pred, aes(Predicted, Observed)) + geom_point() +
-  geom_abline(slope = 0.751, intercept = 1.63) +
-  geom_abline(slope = 1, intercept = 1, linetype = "dashed") + theme_bw() +
+  #co-author Megan says to not include regression and 1:1 lines on plot
+  #geom_abline(slope = 0.751, intercept = 1.63) +
+  #geom_abline(slope = 1, intercept = 1, linetype = "dashed") +
+  theme_bw() +
   theme(text=element_text(family="Times New Roman", size=12)) +
   theme(axis.text=element_text(size=10))
 OP_outlierno2 <- OP_outlierno + coord_cartesian(clip = "off")
@@ -1247,6 +1251,63 @@ plot(Mean_obs_strays ~ Mean_pred_strays, data = mean_bm1u_pred,
      xlim=range(0,20))
 abline(0,1)
 abline(lm(Mean_obs_strays ~ Mean_pred_strays, data = mean_bm1u_pred), col = "red")
+
+
+
+### Pseudo-R2 (coefficient of determination, or prop. variance explained) ###
+
+#At the request of co-authors and an AFS meeting audience member, I'm calculating
+#the pseudo-R^2 value for the model and trying to calculate partial R2 for the 
+#covariates. Neither is well-defined for mixed effects models. See project log,
+#Bayes_intro&Model_dev doc, and Nakagawa 2017 paper
+MuMIn::r.squaredGLMM(bm1u, null = null_mod) #null_mod defined above in cross-val
+#as glmer.nb(Avg_strays ~ (1|Year))
+MuMIn::r.squaredGLMM(bm2u, null = null_mod)
+?r.squaredGLMM #use trigamma R^2 estimates. R2m is the marginal R^2, which gives
+#the variance explained by the fixed effects only. R2c is the conditional R^2,
+#which gives the variance explained by the entire model (FE and RE together)
+
+#Also helpful and important, the residual deviance vs null deviance:
+summary(bm1u) #855.1
+summary(null_mod) #1008.7
+
+
+### In response to AFS talk judge who asked you to report the partial R2 for ind.
+#covariates:
+
+#Determine partial R^2s for your covariates. Not sure if this is best approach,
+#though. Also report change in deviance and, by extension, AICc, with removal of 
+#individual covariates model without Cons_Abundance
+#Full model
+summary(bm1u)$devcomp #deviance = 855.1
+r.squaredGLMM(bm1u, null = null_mod) #marginal R2 = 0.40, conditional = 0.53
+AICc(bm1u) #869.79
+
+
+no_ConsA <- update(bm1u, .~. -Cons_Abundance)
+summary(no_ConsA)$devcomp #deviance = 858.4
+r.squaredGLMM(no_ConsA, null = null_mod) #marginal R2 = 0.38, conditional = 0.52
+AICc(no_ConsA) #870.85
+
+no_WMA <- update(bm1u, .~. -WMA_Releases_by_Yr)
+summary(no_WMA)$devcomp #880.36
+r.squaredGLMM(no_WMA, null = null_mod) #marginal R2 = 0.37, conditional = 0.52
+AICc(no_WMA) #892.85
+
+no_CVf <- glmer.nb(Avg_number_strays ~ (1 | Year) + Cons_Abundance +
+                     WMA_Releases_by_Yr, data = fu_scaled)
+summary(no_CVf)$devcomp #943.95
+r.squaredGLMM(no_CVf, null = null_mod) #marginal R2 = 0.18, conditional = 0.23
+AICc(no_CVf) #954.30
+
+
+
+### Justify use of NB model over poisson ###
+pois_mod <- glmer(Avg_number_strays ~ (1|Year) + Cons_Abundance +
+                    WMA_Releases_by_Yr + CV_flow + I(CV_flow^2),
+                  data = fu_scaled, family = "poisson")
+AICc(bm1u, pois_mod)
+
 
 
 

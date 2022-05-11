@@ -260,7 +260,7 @@ Cons_plot <- ggplot() +
   theme(text=element_text(family="Times New Roman")) #+
 #geom_point(data = trunc_Avg_strays, aes(x = Cons_Abundance,
 #y = Avg_number_strays)) #+ ylim(0, 20)
-Cons_plot
+Cons_plot 
 
 
 # WMA_Releases_by_Yr
@@ -315,6 +315,7 @@ CVflow_plot <- ggplot() +
   xlim(0.42, 0.61) + ylim(0, 20)
 CVflow_plot #gives you a warning about 2 removed rows; that is because of the 
 #x-limit I set in the line above
+
 
 all_effects_plot <- ggarrange(WMA_plot + rremove("ylab"),
                               Cons_plot + rremove("ylab"),

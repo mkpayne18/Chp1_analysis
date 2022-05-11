@@ -1313,5 +1313,5 @@ AICc(bm1u, pois_mod)
 
 
 
-save.image("Mod_fit3.RData")
-load("Mod_fit3.RData")
+save.image("Chp1_analysis.RData")
+load("Chp1_analysis.RData")

@@ -480,6 +480,9 @@ survey_data8 <- survey_data7 %>%
                               DeadCount))
 sum(is.na(survey_data8$DeadCount))
 sum(is.na(survey_data8$NumberofSpecimens))
+survey_data8[survey_data8$DeadCount < 0,] #the model predicted 1 dead count to
+#be < 0. Set this = 0
+survey_data8$DeadCount[survey_data8$DeadCount < 0] <- 0
 
 
 ### Your final dataset that contains all of the dead counts to use for rescaling
@@ -488,6 +491,130 @@ survey_data8
 
 
 
+
+
+
+#8. Rescale your model response variable #######################################
+NumberStrays_NA <- survey_data8 %>%
+  filter(is.na(NumberStrays)) #These should all be zeros (bc NumberofSpecimens =
+#0), so change them to zeros
+survey_data8$NumberStrays[is.na(survey_data8$NumberStrays)] <- 0
+
+
+#8.1. Survey data (survey_data8) final tailoring ===============================
+### Calculate proportion sampled as the NumberofSpecimens/DeadCount, since we 
+#assuming based on all the work in sections 1-7 above that the dead should mostly
+#be new dead
+survey_data8$Proportion_sampled <-
+  survey_data8$NumberofSpecimens/survey_data8$DeadCount
+sum(is.na(survey_data8$Proportion_sampled))
+prop_sampled_NA <- survey_data8 %>% filter(is.na(Proportion_sampled)) #these NAs
+#should be 1s because NumberofSpecimens = 0 and DeadCount = 0, therefore the prop.
+#sampled would be 1
+survey_data8$Proportion_sampled[is.na(survey_data8$Proportion_sampled)] <- 1
+sum(is.na(survey_data8$Proportion_sampled)) #0
+survey_data8$Proportion_sampled[survey_data8$Proportion_sampled < 0] #none
+
+#Are there many proportions sampled > 1?
+length(survey_data8$Proportion_sampled[survey_data8$Proportion_sampled > 1]) #306,
+#so actually yes
+length(survey_data2$Proportion_sampled[survey_data2$Proportion_sampled > 1]) #275,
+#but this doesn't differ much from the raw data (before you did any modeling or
+#updating of values)
+
+
+#Looking at the data, there are some rows where the NumberofSpecimens is actually
+#greater than the TotalCount (Alive + Dead), which doesn't really make any sense.
+#But, this was true in the raw data (i.e., it wasn't anything I did):
+length(survey_data2[survey_data2$NumberofSpecimens > survey_data2$TotalCount,])
+#raw data^^ total = 29
+length(survey_data8[survey_data8$NumberofSpecimens > survey_data8$TotalCount,])
+#my final data^^, total = 29
+#So, I'm not sure what to make of this. I will assume my specimen counts are 
+#accurate and set all proportions sampled > 1 equal to 1, as per C. Cunningham's
+#suggestion
+
+survey_data8$Proportion_sampled[survey_data8$Proportion_sampled > 1] <- 1
+#Final check:
+na_or_below_0 <- function(column){
+  sum(is.na(column))
+  length(column[column < 0])
+}
+na_or_below_0(survey_data8$DeadCount)
+na_or_below_0(survey_data8$NumberofSpecimens)
+na_or_below_0(survey_data8$NumberStrays)
+
+
+
+#8.2. Calculate effective number of hatchery fish! =============================
+#Effective number of hatchery fish = # hatchery strays / proportion sampled
+survey_data8$Effective_number_strays <-
+  survey_data8$NumberStrays/survey_data8$Proportion_sampled
+#Are there any NAs?
+sum(is.na(survey_data8$Effective_number_strays)) #yes, 7 of them
+effective_straysNA <- survey_data8 %>% filter(is.na(Effective_number_strays))
+#these^^ streams all have 0 hatchery strays, and a proportion sampled = 0 as well.
+#The dead counts for these streams ranges from 1-11 individuals. Maybe these are
+#some previously sampled dead, and that's why 0 fish were sampled? Hopefully 1-11 
+#fish is the max error associated with any of my dead counts
+#Since the number of strays for these 7 NAs = 0, then the effective number of 
+#strays would also = 0
+survey_data8$Effective_number_strays[is.na(survey_data8$Effective_number_strays)] <- 0
+sum(is.na(survey_data8$Effective_number_strays)) #none
+survey_data8$Effective_number_strays[survey_data8$Effective_number_strays < 0] #none
+
+
+
+#8.3. Calculate strays by season ===============================================
+new_response_var <- survey_data8 %>% group_by(StreamName, Year) %>%
+  summarise(Total_effective_strays = sum(Effective_number_strays),
+    Number_of_surveys = length(SurveyDate))
+
+sum(is.na(new_response_var$Total_effective_strays)) #0
+sum(is.na(new_response_var$Number_of_surveys)) #0
+
+#Calculate average (effective) number of strays (dividing by # of surveys):
+new_response_var$Avg_number_strays <-
+  new_response_var$Total_effective_strays/new_response_var$Number_of_surveys
+
+### Compare to dataset used previously to determine the response variable
+head(Master_dataset)
+Master_subset <- Master_dataset[,c(2:5,8,9)]
+colnames(Master_subset)[5] <- "old_Number_surveys"
+colnames(Master_subset)[6] <- "old_Avg_strays"
+compare_response <- left_join(new_response_var, Master_subset,
+                              by = c("StreamName", "Year"))
+#Does the number of surveys differ markedly between any of Number_of_surveys used
+#to calculate the response variable previously? (previously = before we incorp-
+#orated the dead count in any way)
+compare_response$diff <-
+  compare_response$Number_of_surveys - compare_response$old_Number_surveys
+#There are two stream-years for which there are significantly more surveys
+#in the new response variable dataset compared to the older version. These are
+#1) Admiralty Creek in 2018, where the newer dataset downloaded from the stream
+#survey reports section includes additional early season surveys where there were
+#no specimens detected, and 2) Sawmill Creek 2015, where I added 7 more surveys
+#that were listed in McConnell et al. 2018, but not in any AHRP data. Most other
+#streams differ little or not at all in # of surveys
+
+#How does the previous average # of strays differ from the effective average # of
+#strays?
+plot(compare_response$old_Avg_strays ~ compare_response$Avg_number_strays)
+abline(0,1, col = "red")
+#does not appear to differ drastically at smaller sample sizes. At larger sample
+#sizes, the new (effective) number of strays is larger than the previous Avg_strays
+#bc we've inflated many of those observations where proportionally less of the
+#total dead was sampled
+
+
+
+#Use the Avg_number_strays column from
+new_response_var #as your model response variable in Model_fitting3.R
+
+
+
 save.image("Chp1_analysis.RData")
 load("Chp1_analysis.RData")
+
+
 

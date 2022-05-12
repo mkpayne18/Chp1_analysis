@@ -2,13 +2,6 @@
 #model that was ultimately analyzed and described in my manuscript for chapter 1.
 #See "Folder_Guide.Rmd" for more info on what the different Model_fittingX.R"
 #files are
-
-
-#Also, an important note: The model was ultimately fit with the removal of an 
-#outlier. So, beyond section 1 where I read in the data (immediately below), you
-#may skip ahead to section 7 to see the fitting process for the final model I 
-#used in the manuscript. Sections 2-6 are retained so you may see my whole process
-#from start to finish
 library(tidyverse)
 library(dplyr)
 library(corrgram)
@@ -59,10 +52,38 @@ rownames(f) <- 1:nrow(f)
 colnames(f)[8] <- "Number_surveys"
 
 
-### Note that the final version of this model ended up excluding an outlier (you 
-#can see why I did that in section 5.6-6). To use/see that final model version,
-#skip ahead to section 7 of this script. It includes all the necessary data-
-#tailoring steps that this section 1 above here includes as well
+
+
+#1.1. Update response variable (Nay 2022) ======================================
+#In May 2022, I'm updating my model response variable to be the average EFFECTIVE
+#number of strays, which takes into account bias in the response variable. Streams
+#with larger dead counts have proportionally fewer fish sampled, so the # of strays
+#detected would be biased low in these streams. I've dealt with this by calcul-
+#ating the average effective number of hatchery strays in the dead_count_analysis.R
+#script. Check out this script and Bayes_intro&Model_devo.docx for more info.
+#Note in section 8.3 of the dead counts script that the two versions of the re-
+#sponse variable don't differ greatly
+
+#Replace Avg_number_strays with effective average number of strays. Avg effective
+#strays can be found in the Avg_number_strays column of new_response_var object
+#created in dead_count_analysis.R:
+colnames(f)[8] <- "old_Number_surveys"
+colnames(f)[9] <- "old_Avg_strays"
+new_f <- left_join(f, new_response_var, by = c("StreamName", "Year"))
+new_f2 <- new_f[,c(1:3,20:22,10:19)] #looks good
+colnames(new_f2)[5] <- "Number_surveys"
+f <- new_f2 #overwrite your former dataset
+#^^In case you can't remember and/or don't want to go dig through Bayes_intro doc
+#or dead_count_analysis.R script, Total_effective_strays is the sum of the eff-
+#ective number of strays from each individual survey in a stream in a year (and
+#effective strays = raw # of strays / proportion of total dead count sampled; it
+#accounts for bias in the response variable). The Avg_number_strays column is now
+#the Total_effective_strays / Number_surveys
+
+
+
+
+
 
 
 
@@ -75,7 +96,7 @@ hist(f$Avg_number_strays, breaks = 50, main =
 boxplot(f$Avg_number_strays) #several high outliers
 response_table <- as.data.frame(table(f$Avg_number_strays))
 head(response_table) #49 zeroes
-49/length(f$Year) #28% of the data, maybe zero-inflation?? Check
+43/length(f$Year) #24% of the data, maybe zero-inflation?? Check
 #to see if model under-predicts the number of 0s later on
 
 #Conclusion: Response data is going to be modeled with Poisson or Negative Bin-
@@ -86,15 +107,15 @@ head(response_table) #49 zeroes
 
 
 #2.2. Check for correlations between explanatory variables =====================
-library(corrgram) #visually assess first
-corrgram(f[ , c(10:19)]) #evidence of several strong correlations
+#visually assess first, using corrgram::corrgram()
+corrgram(f[ , c(7:16)]) #evidence of several strong correlations
 
-library(Hmisc)
-stray_vars <- as.matrix(f[ , c(10:19)])  # Save variables as a matrix 
-(COR <- rcorr(stray_vars, type = "spearman"))
+
+stray_vars <- as.matrix(f[ , c(7:16)])  # Save variables as a matrix 
+(COR <- Hmisc::rcorr(stray_vars, type = "spearman"))
 #or alternatively, from base R:
-cor(f[ , c(10:19)], method = "spearman") #you should use spearman, not pearson
-#correlation coefs because your data may not be normal
+cor(f[ , c(7:16)], method = "spearman") #you should use spearman, not pearson
+#correlation coefs because your data are not normally distributed in all cases
 COR$r   # Matrix of correlations
 COR$P   # Matrix of p-values (which correlations are significant)
 #Cons_Abundance and Cons_Density are highly correlated (0.89)
@@ -116,12 +137,13 @@ print(COR$P <= 0.05) #all of the above mentioned correlations are significant
 #fidence in the density denominator data (area)). I will also remove Dist_
 #nearest_H and Dist_nearest_R since they are correlated with WMA_Releases_by_Yr 
 #and each other. WMA_Releases_by_Yr will remain because it provides the most info
-f <- f[ , -c(12,14,16,17)]
+f <- f[ , -c(9,11,13,14)]
+
 
 
 #2.3. Response~explanatory relationships (ln(response) ~ predictor)) ===========
 par(mfrow=c(2,3))
-for(i in names(f)[10:15]) {
+for(i in names(f)[7:12]) {
   x <- f[,i]
   y <- log(f$Avg_number_strays + 1)	#add 1 because you have zeroes
   plot(x, y, xlab=i, ylab="ln(Avg (obs) # of strays)")
@@ -138,18 +160,18 @@ for(i in names(f)[10:15]) {
 outl_P <-influence.measures(lm(log(f$Avg_number_strays + 1) ~ f$Pink_Abundance))
 4/length(f$Avg_number_strays) #extreme leverage values will be greater than 0.0226
 p1 <- as.data.frame(outl_P[[1]])
-length(which(p1$cook.d > 0.0226)) #6 total Pink_Abundance outliers
+length(which(p1$cook.d > 0.0226)) #7 total Pink_Abundance outliers
 
 #Does a log transformation help?
 outl_P2 <-influence.measures(lm(log(f$Avg_number_strays + 1) ~ log(f$Pink_Abundance + 1)))
 p2 <- as.data.frame(outl_P2[[1]])
-length(which(p2$cook.d > 0.0226)) #9 outliers, log transformation does not improve
+length(which(p2$cook.d > 0.0226)) #11 outliers, log transformation does not improve
 #outlier situation
 
 #Does a square root transformation help?
 outl_P3 <-influence.measures(lm(log(f$Avg_number_strays + 1) ~ sqrt(f$Pink_Abundance)))
 p3 <- as.data.frame(outl_P3[[1]])
-length(which(p3$cook.d > 0.0226)) #7 outliers, does not help
+length(which(p3$cook.d > 0.0226)) #8 outliers, does not help
 
 
 #mean_flow
@@ -160,12 +182,12 @@ length(which(m1$cook.d > 0.0226)) #4 outliers
 #Does a log transformation help?
 outl_M2 <-influence.measures(lm(log(f$Avg_number_strays + 1) ~ log(f$mean_flow)))
 m2 <- as.data.frame(outl_M2[[1]])
-length(which(m2$cook.d > 0.0226)) #10 outliers after transformation
+length(which(m2$cook.d > 0.0226)) #12 outliers after transformation
 
 #Does a square root transformation help?
 outl_M3 <-influence.measures(lm(log(f$Avg_number_strays + 1) ~ sqrt(f$mean_flow)))
 m3 <- as.data.frame(outl_M3[[1]])
-length(which(m3$cook.d > 0.0226)) #9 outliers, transformation does not help
+length(which(m3$cook.d > 0.0226)) #8 outliers, transformation does not help
 
 
 #Pink_Abundance and mean_flow have several outliers. Log and square root trans-
@@ -177,7 +199,7 @@ length(which(m3$cook.d > 0.0226)) #9 outliers, transformation does not help
 
 
 #2.4. Explore distributions of explanatory variables ===========================
-for (i in c(10:15)) {
+for (i in c(7:12)) {
   x <- f[,i]
   hist(x, main = colnames(f)[i])
   print(shapiro.test(x))
@@ -197,7 +219,7 @@ summary(aov(log(f$Avg_number_strays + 1) ~ f$Year)) #differences significant be-
 
 ### Variation in years for explanatory variables 
 par(mfrow=c(2,2))
-for(i in names(f)[10:15]) {
+for(i in names(f)[7:12]) {
   x <- f$Year
   y <- f[,i]
   plot(x, y, xlab="Year")
@@ -211,8 +233,8 @@ for(i in names(f)[10:15]) {
 
 ### Variation in response ~ covariate relationships by year 
 #Consider whether you might need random slopes
-library(lattice)
-for (i in names(f)[10:15]) {
+#xyplot is from library(lattice)
+for (i in names(f)[7:12]) {
   print(xyplot(log(Avg_number_strays+1) ~ f[,i]|Year, data = f, type = c("p","r"),
                xlab = i))
 }
@@ -289,11 +311,14 @@ Moran.I(spatio_sum3$Number_Strays, dist_mat_inv) #p = 0.308, fail to reject
 
 
 
+
+
+
 #3. Scale covariates ###########################################################
 ### Scale across all years because you are trying to make inferences across time,
 #not by year (OK because you will have year as a random effect)
-m <- apply(f[ , c(10:15)], 2, scale.default)
-f_scaled <- cbind.data.frame(f[ , c(1:9)], m)
+m <- apply(f[ , c(7:12)], 2, scale.default)
+f_scaled <- cbind.data.frame(f[ , c(1:6)], m)
 head(f_scaled) #Note that scaling is required. I tried fitting glmer.nb earlier 
 #on without scaling and the model would not converge and returned several warnings
 
@@ -303,8 +328,10 @@ head(f_scaled) #Note that scaling is required. I tried fitting glmer.nb earlier
 #4.1. Check for overdispersion in the response (likely) ========================
 ### Determine mean and variance of evenly split chunks of data
 chunk2 <- function(x,n) split(x, cut(seq_along(log(f$Avg_number_strays+1)), n,
-                                     labels = FALSE))
-f_split <- chunk2(sort(log(f$Avg_number_strays+1)), 17) #split into 17 groups
+                                     labels = FALSE)) #can use f or f_scaled,
+#doesn't matter as the response variable vector didn't change between the two
+f_split <- chunk2(sort(log(f$Avg_number_strays+1)), 17) #split into 17 groups so 
+#that you can have approximately 10 observations within each
 f_means <- lapply(f_split, mean)
 f_means <- data.frame(matrix(unlist(f_means), nrow=length(f_means), byrow=F))
 colnames(f_means)[1] <- "means"
@@ -320,7 +347,7 @@ fit <- lm(f_variances ~ f_means + I(f_means^2))
 curve(predict(fit, newdata = data.frame(f_means=x)), add=T)
 #Variance substantially greater than the mean at high values. In fact, the quad-
 #ratic relationship of the lm fit above (variance ~ mean^2) seems to approximate
-#the relationship well minus one outlier
+#the relationship quite well
 #CONCLUSION: Use negative binomial probability distribution to fit model due to 
 #apparent overdispersion
 
@@ -334,18 +361,18 @@ stray_1 <- glmer.nb(Avg_number_strays ~ (1|Year) + Fishery_harvest +
                       mean_flow + CV_flow, data = f_scaled)
 #if you need more iterations, include this after your data argument"
 #control = glmerControl(optimizer="bobyqa", optCtrl = list(maxfun = 100000))) 
-AICc(stray_1, REML = F) #958.07
+AICc(stray_1, REML = F) #1035.29
 
 
 #4.3. Check for higher order terms =============================================
 ### Possible quadratic relationships:
-for(i in c(10:15)){
+for(i in c(7:12)){
   mod <- glmer.nb(Avg_number_strays ~ (1|Year) + Fishery_harvest +
                     Cons_Abundance + Pink_Abundance + WMA_Releases_by_Yr +
                     mean_flow + CV_flow + I(f_scaled[ , i]^2), data = f_scaled)
   print(AICc(mod, REML = F))
 } #Pink_Abundance, WMA_Releases_by_Yr, and CV_flow quadratic terms improve the 
-#model fit, though it is by < 2 AICc points for Pink_Abundance
+#model fit, though it is by < 3 AICc points for Pink_Abundance
 stray_1.1 <- glmer.nb(Avg_number_strays ~ (1|Year) + Fishery_harvest +
                         Cons_Abundance + Pink_Abundance + WMA_Releases_by_Yr +
                         mean_flow + CV_flow + I(WMA_Releases_by_Yr^2),
@@ -356,33 +383,53 @@ summary(stray_1.1) #WMA_Releases_by_Yr is almost perfectly correlated with its
 stray_1.2 <- glmer.nb(Avg_number_strays ~ (1|Year) + Fishery_harvest +
                         Cons_Abundance + Pink_Abundance + WMA_Releases_by_Yr +
                         mean_flow + CV_flow + I(CV_flow^2), data = f_scaled)
-lmtest::lrtest(stray_1, stray_1.2) #CV_flow^2 improves model fit
+lmtest::lrtest(stray_1, stray_1.2) #CV_flow^2 improves model fit ("reject the
+#null = reject the simpler model")
 summary(stray_1.2) #no issues with collinearity. Keep CV_flow^2 term 
-AICc(stray_1.2) #893.61
+AICc(stray_1.2) #955.77
 
 
 ### Possible interactions:
 stray_2 <- glmer.nb(Avg_number_strays ~ (1|Year) + Fishery_harvest +
                       Cons_Abundance + Pink_Abundance + WMA_Releases_by_Yr +
                       mean_flow + CV_flow + I(CV_flow^2) +
-                      WMA_Releases_by_Yr:mean_flow, data = f_scaled)
-AICc(stray_1.2) #current best AICc = 893.61
+                      WMA_Releases_by_Yr:Cons_Abundance, data = f_scaled)
+AICc(stray_1.2) #current best AICc = 955.77
 AICc(stray_2)
-#Fishery_harvest:Cons_Abundance = 895.84
-#Fishery_harvest:Pink_Abundance = 895.59
-#Cons_Abundance:Pink_Abundance = 893.21
-#Cons_Abundance:mean_flow = 894.04
-#Cons_Abundance:CV_flow = 895.86
-#Pink_Abundance:mean_flow = 894.95
-#Pink_Abundance:CV_flow = 893.20
-#WMA_Releases_by_Yr:Cons_Abundance = 893.83
-#WMA_Releases_by_Yr:Pink_Abundance = 895.79
-#WMA_Releases_by_Yr:mean_flow = 891.72
-#WMA_Releases_by_Yr:CV_flow = 895.84
+#Fishery_harvest:Cons_Abundance = 957.98
+#Fishery_harvest:Pink_Abundance = 957.32
+#Cons_Abundance:Pink_Abundance = 956.31
+#Cons_Abundance:mean_flow = 957.07
+#Cons_Abundance:CV_flow = 958.00
+#Pink_Abundance:mean_flow = 956.09
+#Pink_Abundance:CV_flow = 955.56 ####
+#WMA_Releases_by_Yr:Cons_Abundance = 954.11 ####
+#WMA_Releases_by_Yr:Pink_Abundance = 957.72
+#WMA_Releases_by_Yr:mean_flow = 953.02 ####
+#WMA_Releases_by_Yr:CV_flow = 957.59
 lmtest::lrtest(stray_1.2, stray_2) #the greatest reduction in AICc was with the 
-#WMA_Releases_by_Yr:mean_flow interaction and passes the LRT
+#WMA_Releases_by_Yr:mean_flow interaction and passes the LRT. WMA_Releases_by_Yr:
+#Cons_Abundance also passes the LRT
 summary(stray_2) #However, WMA_Releases_by_Yr:mean_flow has collinearity 
-#issues. Do not include it in the model
+#issues. Do not include it in the model. But you should include Cons_Abundance:
+#WMA_Releases_by_Yr interaction because it improves model fit and does not have
+#collinearity issues
+
+
+
+
+
+####
+
+#### For the sake of getting your thesis done on time, ignore the Cons_Abundance:
+#WMA_Releases_by_Yr interaction for now (until the manuscript stage). Come back
+#and include it again later on 
+
+
+
+
+
+
 
 #Current best model:
 stray_1.2
@@ -402,7 +449,7 @@ qqnorm(residuals(stray_1.2, type = "pearson"))
 
 par(mfrow=c(2,3))
 resid_cov <- function(mod){
-  for(i in c(10:15)){ 
+  for(i in c(7:12)){ 
     plot(residuals(mod, type = "deviance") ~ f_scaled[ , i]) #change residual
     #type back and forth between "deviance" and "pearson" depending on what you
     #want to see
@@ -410,21 +457,20 @@ resid_cov <- function(mod){
   }
 }
 resid_cov(stray_1.2)
-#acceptable enough to proceed, though note there seems to be one major outlier
-# on qqnorm plots that you may need to look into further
+#acceptable enough to proceed
 
 
 summary(stray_1.2) 
-#mean_flow is HIGHLY insignificant (p = 0.93). Remove from future versions of 
+#mean_flow is HIGHLY insignificant (p = 0.52). Remove from future versions of 
 #model
-AICc(stray_1.2, REML = F) #893.61
+AICc(stray_1.2, REML = F) #955.77
 
 stray_2 <- glmer.nb(Avg_number_strays ~ (1|Year) + Fishery_harvest +
                       Cons_Abundance + Pink_Abundance + WMA_Releases_by_Yr +
                       CV_flow + I(CV_flow^2), data = f_scaled)
 summary(stray_2) #no correlations > 0.4
-car::vif(stray_2) #all are < 1.5
-AICc(stray_2, REML = F) #891.37
+car::vif(stray_2) #all are < 1.6
+AICc(stray_2, REML = F) #953.92
 
 
 
@@ -441,7 +487,7 @@ CV_f <- glmer.nb(Avg_number_strays ~ (1|Year) + CV_flow + I(CV_flow^2), data = f
 print(coef(harvest)); print(coef(Cons_A)); print(coef(Pink_A)); print(coef(WMA));
 print(coef(CV_f))
 par(mfrow=c(2,2))
-for (i in c(10:13, 15)) {
+for (i in c(7:10,12)) { 
   x <- f_scaled[,i]
   y <- log(f_scaled$Avg_number_strays+1)
   plot(x, y)
@@ -451,11 +497,11 @@ for (i in c(10:13, 15)) {
 
 #Compare to overall model fit
 summary(stray_2)
-summary(harvest) #0.10 (p = 0.45) in stray_2, 0.32 (p = 0.07) in individual mod
-summary(Cons_A) #-0.31 (p = 0.02) in stray_2, -0.77 (p = 0) in individual mod
-summary(Pink_A) #0.16 (p = 0.19) in stray_2, -0.52 (p = 0) in individual mod
-summary(WMA) #0.39 (p = 0) in stray_2, 1.07 (p = 0) in individual mod
-summary(CV_f) #0.44 + 0.70^2 (p = 0) in stray_2, 0.48 + 0.77^2 (p = 0) in ind. mod
+summary(harvest) #0.14 (p = 0.31) in stray_2, 0.33 (p = 0.06) in individual mod
+summary(Cons_A) #-0.22 (p = 0.08) in stray_2, -0.69 (p = 0.72) in individual mod
+summary(Pink_A) #0.16 (p = 0.22) in stray_2, -0.51 (p = 0.82) in individual mod
+summary(WMA) #0.35 (p = 0) in stray_2, 1.17 (p = 0) in individual mod
+summary(CV_f) #0.42 + 0.82^2 (p = 0) in stray_2, 0.48 + 0.87^2 (p = 0) in ind. mod
 #Pink_Abundance is totally spurious! Magnitude and sign change greatly between 
 #models. Furthermore, stray_2 coef estimate for Pink_Abundance is positive when
 #it appears that Pink_Abundance is negatively correlated with response in plot
@@ -465,9 +511,9 @@ stray_3 <- glmer.nb(Avg_number_strays ~ (1|Year) + Fishery_harvest +
                       Cons_Abundance + WMA_Releases_by_Yr + CV_flow +
                       I(CV_flow^2), data = f_scaled)#, control =
                       #glmerControl(optimizer="bobyqa", optCtrl = list(maxfun = 1e6)))
-AICc(stray_3, REML = F) #890.93
+AICc(stray_3, REML = F) #953.28
 car::vif(stray_3) #OK
-summary(stray_3) #Cons_Abundance-CV_flow correlation = 0.404, all others < 0.4
+summary(stray_3) #Fishery_harvest:CV_flow correlation = -0.422, all others < 0.4
 
 
 #4.5. Dredge model (MuMIn::dredge()) ===========================================
@@ -482,7 +528,7 @@ straymod_dredge <- dredge(stray_3, rank = "AICc")
 #is fine to proceed(?)
 
 head(straymod_dredge)
-#The top two models account for 78% of the total model weight, so I will average
+#The top two models account for 71.9% of the total model weight, so I will average
 #the results from those two and disregard the remaining models (I never actually
 #end up doing the model averaging for these two models below bc I find in section
 #6 that there is an outlier worth removing, therefore I fit new models using an
@@ -491,7 +537,7 @@ head(straymod_dredge)
 #this is)
 bm1 <- glmer.nb(Avg_number_strays ~ (1|Year) + Cons_Abundance + WMA_Releases_by_Yr
                 + CV_flow + I(CV_flow^2), data = f_scaled) #'bm' for "best model"
-bm2 <- glmer.nb(Avg_number_strays ~ (1|Year) + Fishery_harvest + Cons_Abundance +
+bm2 <- glmer.nb(Avg_number_strays ~ (1|Year) +
                   WMA_Releases_by_Yr + CV_flow + I(CV_flow^2), data = f_scaled)
 #Note that creating new model fits (bm1, bm2) is not exactly equivalent to extrac-
 #ting the model coefficients from the MuMIn::dredge() object. I created new model
@@ -506,12 +552,10 @@ bm2 <- glmer.nb(Avg_number_strays ~ (1|Year) + Fishery_harvest + Cons_Abundance 
 
 #5. Model diagnostics ##########################################################
 #5.1. Compare to null model ====================================================
-AICc(bm1, bm2, glm.nb(Avg_number_strays ~ 1, data = f_scaled)) #null model is 
-#significantly worse
-AICc(bm1, bm2, glmer.nb(Avg_number_strays ~ (1|Year), data = f_scaled)) #also true
-#with Year as random intercept
-
-lmtest::lrtest(bm1, glmer.nb(Avg_number_strays ~ (1|Year), data = f_scaled))
+null_model <- glmer.nb(Avg_number_strays ~ (1|Year), data = f_scaled)
+AICc(bm1, bm2, null_model) #null model is worse
+lmtest::lrtest(bm1, null_model) #com-
+#plex model is better
 
 
 #5.2. Residual diagnostics =====================================================
@@ -554,7 +598,7 @@ qqnorm(residuals(bm2, type = "pearson"), main = "Model #2-outlier included")
 ### Residuals ~ predictor variables
 par(mfrow=c(2,2))
 resid_cov <- function(mod, dat){
-  for(i in c(10,11,13,15)){ #add column 10 for bm2
+  for(i in c(8,10:12)){ #add column 10 for bm2
     plot(residuals(mod, type = "deviance") ~ dat[ , i])
     title(colnames(dat)[i])
   }
@@ -613,7 +657,8 @@ mae_bm1 <- vector(length = 500)
 #value is (much greater error for large values because there are fewer of them).
 #Observe this by excluding the largest observed values in the model fitting with
 #the sub_f_scaled dataset
-sub_f_scaled <- f_scaled[f_scaled$Avg_number_strays < 20,]
+sub_f_scaled <- f_scaled[f_scaled$Avg_number_strays < 40,] #40 is approx. break
+#in data
 #Best model (bm1):
 for(j in 1:10){
   for (i in 1:500) {
@@ -625,7 +670,7 @@ for(j in 1:10){
     training <- splitdf[["FALSE"]]
     test <- splitdf[["TRUE"]]
     
-    predictions <- bm1 %>% predict(test)
+    predictions <- null_model %>% predict(test)
     #remember to exp() bc the glmer.nb output is in log space
     exp.pred <- exp(predictions)
     mae <- MAE(exp.pred, test$Avg_number_strays, na.rm = TRUE)
@@ -635,7 +680,9 @@ for(j in 1:10){
 }
 mean_mae
 mean(mean_mae) #for f_scaled (full dataset including large obs. values), the mean
-#MAE is 7.23. For sub_f_scaled, it is only 4.31
+#MAE is 10.56 For sub_f_scaled, it is only 5.89
+#And for the null model, for full f_scaled dataset, the mean MAE is 14.9. For
+#sub_f_scaled, it is 8.26
 
 
 
@@ -684,10 +731,50 @@ abline(lm(Mean_obs_strays ~ Mean_pred_strays, data = mean_bm1_pred), col = "red"
 #apparent outlier on the qqnorm plot that may be having some influence on the fit
 out <- cooks.distance(influence(bm1, obs = T))
 class(out)
-out <- as.vector(out)
-which(out > 0.2) #162 is a big outlier. Remove and refit
-identify(qqnorm(residuals(bm1, type = "pearson"), main = "Model #1 pearson residuals"))
+out <- as.data.frame(out)
+out$out <- round(out$out, 2)
+which(out$out > 0.2) #no outliers (cook's distance > 0.2)
+#identify(qqnorm(residuals(bm1, type = "pearson"), main = "Model #1 pearson residuals"))
 #confirmed by qqnorm plot
+
+
+
+### Pseudo-R2 (coefficient of determination, or prop. variance explained) ###
+
+#At the request of co-authors and an AFS meeting audience member, I'm calculating
+#the pseudo-R^2 value for the model and trying to calculate partial R2 for the 
+#covariates. Neither is well-defined for mixed effects models. See project log,
+#Bayes_intro&Model_dev doc, and Nakagawa 2017 paper
+MuMIn::r.squaredGLMM(bm1, null = null_model) #null_mod defined above in cross-val
+#as glmer.nb(Avg_strays ~ (1|Year))
+MuMIn::r.squaredGLMM(bm2, null = null_model)
+?r.squaredGLMM #use trigamma R^2 estimates. R2m is the marginal R^2, which gives
+#the variance explained by the fixed effects only. R2c is the conditional R^2,
+#which gives the variance explained by the entire model (FE and RE together)
+
+
+### Justify use of NB model over poisson ###
+pois_mod <- glmer(Avg_number_strays ~ (1|Year) + Cons_Abundance +
+                    WMA_Releases_by_Yr + CV_flow + I(CV_flow^2),
+                  data = fu_scaled, family = "poisson")
+AICc(bm1u, pois_mod)
+
+
+
+
+### BEFORE I changed my model response variable to the average effective number
+#of hatchery strays, I had found that there was a significant outlier, hence all
+#of the rest of code below this point. This is not the case for the new (May 2022)
+#response variable. So you can stop at this point
+
+
+
+
+
+
+
+
+
 
 
 

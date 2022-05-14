@@ -4,6 +4,7 @@
 library(dplyr)
 library(lubridate)
 library(lme4)
+library(ggplot2)
 
 ### Read in data
 survey_data <- read.csv("survey_data.csv") #directly downloaded from hatcherywild.org,
@@ -33,6 +34,7 @@ abline(0,1, col = "red") #there is clear evidence of bias, whereby a proportiona
 #value in streams with higher dead counts
 
 
+
 ### Plot proportion of fish sampled (sampled/total dead) ~ total dead count
 survey_data2$Proportion_sampled <- survey_data2$NumberofSpecimens/survey_data2$DeadCount
 plot(Proportion_sampled ~ DeadCount, survey_data2) #hard to see. Filter out prop.
@@ -40,6 +42,28 @@ plot(Proportion_sampled ~ DeadCount, survey_data2) #hard to see. Filter out prop
 prop_1 <- survey_data2 %>% filter(Proportion_sampled <= 1)
 plot(Proportion_sampled ~ DeadCount, prop_1) #confirms my above conclusion in 
 #previous plot
+
+
+##ggplot version of first plot for manuscript
+#exclude the streams that have live fish sampled (i.e., NumberofSpecimens > 
+#DeadCount), which are contained in the prop_1 dataframe
+plot(NumberofSpecimens ~ DeadCount, prop_1) #base R version
+
+bias_plot <- ggplot() +
+  geom_point(data = prop_1, aes(x = DeadCount, y = NumberofSpecimens)) +
+  geom_abline() +
+  labs(y = "Number of carcasses sampled",
+       x = "Total number of carcasses in stream") +
+  theme_bw() +
+  theme(text = element_text(family="Times New Roman", size = 14)) +
+  theme(axis.text = element_text(size = 14))
+bias_plot
+
+#Export as high-res figure
+tiff("bias_plot.tiff", width = 8, height = 7, pointsize = 12, units = 'in',
+     res = 300)
+bias_plot #graph that you want to export
+dev.off( )
 
 
 

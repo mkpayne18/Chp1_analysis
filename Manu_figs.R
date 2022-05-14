@@ -1,12 +1,13 @@
 #Note that some figures and tables made more sense to create in Model_fitting3.R,
 #so if you can't find the code for a figure you expected to find here then check
 #that script
+library(dplyr)
 library(ggplot2)
 library(ggmap)
 library(ggspatial)
 library(ggsn)
 library(ggpubr)
-
+library(effects)
 
 setwd("~/Documents/CHUM_THESIS/Analysis")
 Master_dataset <- read.csv("Master_dataset.csv")
@@ -17,33 +18,25 @@ Master_dataset$Year <- factor(Master_dataset$Year)
 
 #Figure 1. Observed number of strays + hatchery locations map ##################
 ################################################################################
-load("Mod_fit3.RData") #load data that has mean attractiveness index by year for
-#each stream
-mean_bm1u_pred
-#dataframe that has coordinates for each stream:
-coords2 <- read_csv("Figs_Results/Suppl_Materials/Spatial_AutoC/Number_strays_by_Yr_w_coords.csv")
+load("Chp1_analysis.RData") #load data that has mean attractiveness index by year
+#for each stream
+mean_bm1_pred #this is df containing mean observed values by stream. Link the 
+#locations:
+#Stream locations df:
+StreamPoints <- read.csv("StreamPoints.csv")
 
-######
-#from previously when testing for spatial autocorrelation; gives average of the 
-#average number of strays for each streams across all years sampled:
-Avg_strays_by_Yr_w_coords <-
-  read_csv("~/Documents/CHUM THESIS/Manuscript/Spatial_AutoC/Avg_strays_by_Yr_w_coords.csv")
-#remove Fish Creek-Portland Canal
-Avg_strays_by_Yr_w_coords <-
-  Avg_strays_by_Yr_w_coords[!Avg_strays_by_Yr_w_coords$StreamName ==
-                              "Ketchikan Creek", ]
-####
+data_for_map <- left_join(mean_bm1_pred, StreamPoints, by = "StreamName")
+data_for_map <- data_for_map[,c(1,8,9,2,3)]
 
 #include number of times a stream was surveyed on figure: 
-surv <- Master_dataset %>% group_by(StreamName) %>%
-  summarise(Number_of_Surveys = sum(Number.of.surveys))
-Avg_strays_by_Yr_w_coords <- left_join(coords2, surv, by = "StreamName")
-Avg_strays_by_Yr_w_coords <- left_join(Avg_strays_by_Yr_w_coords, mean_bm1u_pred,
-                                       by = "StreamName")
+surv <- f %>% group_by(StreamName) %>% #use f data object; the df that was used
+  #for modeling after filtering out fall-run chum streams
+  summarise(Number_of_Surveys = sum(Number_surveys))
+data_for_map <- left_join(data_for_map, surv, by = "StreamName")
 
 
 #read in hatchery locations
-Hatchery_Locations <- read_csv("~/Documents/CHUM_THESIS/Data Sources/Hatchery_Locations.csv")
+Hatchery_Locations <- read.csv("~/Documents/CHUM_THESIS/Data Sources/Hatchery_Locations.csv")
 
 #remove Wally Noerenberg and Nitinat River hatcherys
 Hatchery_Locations <- Hatchery_Locations[c(1:12), ]
@@ -56,15 +49,15 @@ fig1 <- ggmap(myMap) + geom_point(aes(x = Longitude, y = Latitude,
                                       size = Mean_obs_strays,
                                       fill = Number_of_Surveys),
                                   colour = "black", pch = 21,
-                                  data = Avg_strays_by_Yr_w_coords) +
+                                  data = data_for_map) +
   scale_size_continuous(range = c(2, 10)) +
   xlab("Longitude") + ylab("Latitude") + theme(axis.text = element_text(size = 12)) +
   theme(axis.title = element_text(size = 13)) +
   theme(legend.text = element_text(size = 11.5)) +
   theme(legend.title = element_text(size = 14)) +
-  theme(legend.key=element_blank()) + labs(size = "Mean Observed Index",
-                                           fill = "Number of Surveys") +
-  theme(text=element_text(family="Times New Roman", size=12)) +
+  theme(legend.key=element_blank()) + labs(size = "Mean observed index",
+                                           fill = "Number of surveys") +
+  theme(text = element_text(family = "Times New Roman", size = 12)) +
   ggspatial::annotation_north_arrow( #direction arrow code chunk
     location = "bl", which_north = "true",
     pad_x = unit(0.4, "in"), pad_y = unit(0.4, "in"),
@@ -79,7 +72,7 @@ fig1 <- ggmap(myMap) + geom_point(aes(x = Longitude, y = Latitude,
 fig1
 
 #to add hatchery locations to the map AND have them be included in the legend:
-H_llocs <- rep("Hatchery Locations", 12)
+H_llocs <- rep("Hatchery locations", 12)
 Hatchery_Locations <- cbind.data.frame(Hatchery_Locations, H_llocs)
 
 fig1a <- fig1 + geom_point(data = Hatchery_Locations, aes(x = Longitude,
@@ -233,8 +226,9 @@ dev.off( ) #now the displayed graphs are saved to a file with the above file nam
 
 
 #Figure 3. Covariate effects plots #############################################
-# Cons_Abundance
-library(effects)
+
+### Cons_Abundance
+#using the library(effects)
 effects_Cons <- effects::effect(term = "Cons_Abundance", mod = bm1u, xlevels = 10)
 summary(effects_Cons)
 x_Cons <- as.data.frame(effects_Cons)
@@ -263,15 +257,16 @@ Cons_plot <- ggplot() +
 Cons_plot 
 
 
-# WMA_Releases_by_Yr
-effects_WMA <- effects::effect(term = "WMA_Releases_by_Yr", mod = bm1u, xlevels = 10)
+### WMA_Releases_by_Yr
+effects_WMA <- effects::effect(term = "WMA_Releases_by_Yr", mod = bm1,
+                               xlevels = 10, confidence.level = 0.95)
 summary(effects_WMA)
 x_WMA <- as.data.frame(effects_WMA)
 
 #there is probably a better way to do this, but here is my method for now:
 #un-scale the data
-mean(f_update$WMA_Releases_by_Yr, na.rm = T) #16.3
-sd(f_update$WMA_Releases_by_Yr, na.rm = T) #27.6
+mean(f$WMA_Releases_by_Yr, na.rm = T) #16.3
+sd(f$WMA_Releases_by_Yr, na.rm = T) #27.6
 x_WMA$WMA_Releases_by_Yr <- (x_WMA$WMA_Releases_by_Yr * 27.6) + 16.3
 
 WMA_plot <- ggplot() +
@@ -279,8 +274,8 @@ WMA_plot <- ggplot() +
   geom_ribbon(data= x_WMA,
               aes(x = WMA_Releases_by_Yr, ymin = lower, ymax = upper),
               alpha= 0.3, fill="grey70") +
-  xlab("Number of Fish Released within 40KM") +
-  ylab("Attractiveness Index") + theme_classic() +
+  xlab("Number of fish released within 40 km") +
+  ylab("Attractiveness index") + theme_classic() +
   theme(axis.title = element_text(size = 15)) +
   theme(axis.text = element_text(size = 14)) +
   theme(text=element_text(family="Times New Roman")) #+
@@ -290,15 +285,16 @@ WMA_plot
 
 
 
-# CV_flow
-effects_CV_flow <- effects::effect(term = "CV_flow", mod = bm1u, xlevels = 10)
+### CV_flow
+effects_CV_flow <- effects::effect(term = "CV_flow", mod = bm1, xlevels = 10,
+                                   confidence.level = 0.95)
 summary(effects_CV_flow)
 x_CV_flow <- as.data.frame(effects_CV_flow)
 
 #there is probably a better way to do this, but here is my method for now:
 #un-scale the data
-mean(f_update$CV_flow, na.rm = T) #0.53
-sd(f_update$CV_flow, na.rm = T) #0.057
+mean(f$CV_flow, na.rm = T) #0.53
+sd(f$CV_flow, na.rm = T) #0.057
 x_CV_flow$CV_flow <- (x_CV_flow$CV_flow * 0.057) + 0.53
 
 CVflow_plot <- ggplot() +
@@ -306,22 +302,22 @@ CVflow_plot <- ggplot() +
   geom_ribbon(data= x_CV_flow,
               aes(x = CV_flow, ymin = lower, ymax = upper),
               alpha= 0.3, fill="grey70") +
-  xlab("CV of Streamflow") +
-  ylab("ln(Average Predicted # of Strays)") + theme_classic() +
+  xlab("CV of streamflow") +
+  ylab("ln(predicted attractiveness index)") + theme_classic() +
   ylab("Attractiveness Index") + theme_classic() +
   theme(axis.title = element_text(size = 15)) +
   theme(axis.text = element_text(size = 14)) +
   theme(text=element_text(family="Times New Roman")) +
-  xlim(0.42, 0.61) + ylim(0, 20)
+  xlim(0.45, 0.61) + ylim(0, 25)
 CVflow_plot #gives you a warning about 2 removed rows; that is because of the 
 #x-limit I set in the line above
 
 
 all_effects_plot <- ggarrange(WMA_plot + rremove("ylab"),
-                              Cons_plot + rremove("ylab"),
+                              #Cons_plot + rremove("ylab"),
                               CVflow_plot + rremove("ylab"))
 all_effects_plot2 <- annotate_figure(all_effects_plot,
-                                     left = text_grob("Predicted Attractiveness Index",
+                                     left = text_grob("Predicted attractiveness index",
                                                       size = 15,
                                                       family = "Times", rot = 90)) #if you are
 #wondering, "rot = 90" rotates the y-axis label 90 degrees so that it is vertical
@@ -330,7 +326,7 @@ all_effects_plot2
 
 #export high-res figure
 getwd()
-tiff('effects_plots.tiff', width = 8, height = 6.3, pointsize = 12,
+tiff('effects_plots.tiff', width = 9, height = 5, pointsize = 12,
      units = 'in', res = 300)
 all_effects_plot2
 dev.off()
@@ -345,28 +341,39 @@ View(strays_range)
 
 
 
-#Table 3: pred and observed values #############################################
-tab3.1 <- fu_scaled %>% group_by(StreamName) %>%
+#Table 2: pred and observed values #############################################
+tab2.1 <- f_scaled %>% group_by(StreamName) %>%
   summarise(across(Avg_number_strays, c(min,max)), across(Number_surveys, sum))
 #from Model_fitting3.R:
-head(mean_bm1u_pred)
-tab3 <- left_join(tab3.1, mean_bm1u_pred)
-tab3 <- tab3[,c(1,5,6,2:4)]
+head(mean_bm1_pred)
+tab2 <- left_join(tab2.1, mean_bm1_pred)
+#add number of years surveyed column
+yrs_surveyed <- f_scaled %>% group_by(StreamName) %>%
+  summarise(Number_yrs_surveyed = n())
+tab2 <- left_join(tab2, yrs_surveyed)
+
+#Tailor the df:
+tab2 <- tab2[,c(1,5,6,2:4,7)]
 name_update <- c("Mean predicted attractiveness index",
                  "Mean observed attractiveness index",
                  "Minimum observed number of strays", "Maximum observed number of strays",
-                 "Total number of surveys")
-tab3 <- tab3 %>% rename_at(2:6, ~name_update)
-tab3 <- tab3[order(tab3$`Mean predicted attractiveness index`, decreasing = T),]
+                 "Total number of surveys", "Number of years surveyed")
+tab2 <- tab2 %>% rename_at(2:7, ~name_update)
+
+
+#Include location data for the supplemental materials version of this table:
+StreamPoints <- read.csv("StreamPoints.csv")
+tab2 <- left_join(tab2, StreamPoints, by = "StreamName")
+tab2 <- tab2[,c(1,12,13,2:7)]
+
+#If you want to add relative attractiveness:
+tab2 <- tab2[order(tab2$`Mean predicted attractiveness index`, decreasing = T),]
 PAR <- 1:56
-tab3 <- cbind.data.frame(tab3, PAR)
-colnames(tab3)[7] <- "Predicted attractivenes rank"
-#add location data in case you need it
-head(Avg_strays_by_Yr_w_coords) #has location data by stream
-tab3 <- left_join(tab3, Avg_strays_by_Yr_w_coords, by = "StreamName")
-tab3 <- tab3[,c(1:7,10,11)]
+tab2 <- cbind.data.frame(tab3, PAR)
+colnames(tab2)[7] <- "Predicted attractivenes rank"
+
 getwd()
-write.csv(tab3, "pred_obs_table.csv")
+write.csv(tab2, "pred_obs_table.csv")
 
 
 
@@ -388,22 +395,32 @@ tabs2 <- tabs2[,-c(1:4,8:10)]
 write.csv(tabs2, "Table_S2.csv")
 
 
-#old Table 3 stuff #############################################################
-u <- X2008_2019_HW_Data %>% group_by(`Hatchery of Origin`) %>%
-  summarise(Sum = sum(From_H))
-View(u)
-
-v <- Releases_site_year %>% group_by(YearReleased) %>%
-  summarise(Sum = sum(SUM_Releases_in_millions))
-View(v)
 
 
+#Table S5. Individual stream survey info #####################################
+new_response_var #from dead_counts_analysis.R
+survey_data8 #also from dead_counts_analysis.R, contains the dead counts
+deads_by_yr <- survey_data8 %>% group_by(StreamName, Year) %>%
+  summarise(Total_dead = sum(DeadCount),
+            Number_H_fish = sum(NumberStrays),
+            Total_fish_sampled = sum(NumberofSpecimens))
+tables5 <- left_join(new_response_var, deads_by_yr, by = c("StreamName", "Year"))
+
+sapply(deads_by_yr, function(x) sum(is.na(x)))
+
+tables5 <- tables5[,c(2,1,8,7,6,3:5)]
+colnames(tables5)[2] <- "Stream name"      
+colnames(tables5)[3] <- "Total fish sampled"
+colnames(tables5)[4] <- "Number of hatchery fish"
+colnames(tables5)[5] <- "Dead count"
+colnames(tables5)[6] <- "Effective number of hatchery strays"
+colnames(tables5)[7] <- "Number of surveys"
+colnames(tables5)[8] <- "Attractiveness index (average effective number of strays)"
+
+write.csv(tables5, "ind_yr_table_supplem.csv")
 
 
-#Table S3: Individual stream survey info #######################################
-tabs3 <- fu_scaled[,c(2:7)]
-head(tabs3)
-write.csv(tabs3, "Table_S3.csv")
+
 
 
 
@@ -431,13 +448,10 @@ ggcorrplot(COR$r, lab = T) +
 #I would leave it be for now and see if the grad school notices. You can always
 #come back and make a correlation matrix using some other package
 
-#Export as high-res figure
-setwd("~/Documents/CHUM_THESIS/Analysis/Figs_Results")
-tiff("corr_matrix.tiff", width = 7, height = 6, pointsize = 12, units = 'in', res = 300)
-ggcorrplot(COR$r, lab = T) +
-  theme(text=element_text(family="Times New Roman", size=12)) #graph that you want to export
-dev.off( ) #now the displayed graphs are saved to a file with the above file name
-
+## Never mind this plot^^ it's not really customizable at all. Just export your
+#correlation matrix as a .csv and copy and paste as a table into your paper
+corr_matrix <- COR$r
+write.csv(corr_matrix, "corr_matrix.csv")
 
 
 
@@ -501,15 +515,13 @@ range(split2[[1]]$Mean_pHOS) #report in paper, along with mean in line above
 #Observed ~ predicted values plot ##############################################
 #Can also be found near end of section 7.4 of Model_fitting3.R because I was using
 #this plot during analysis to evaluate predictions
-lm_no <-lm(Observed ~ Predicted, data = bm1u_pred) #"no" for no outlier, which
+lm_no <-lm(Observed ~ Predicted, data = bm1_pred) #"no" for no outlier, which
 #doesn't matter anymore bc I'm not graphically comparing pre- and post-outlier
 #models anymore. I left the lm name the same though so you could find the matching
 #code in Model_fitting3.R script
 summary(lm_no)
-OP_outlierno <- ggplot(bm1u_pred, aes(Predicted, Observed)) + geom_point() +
-  #co-author Megan says to not include regression and 1:1 lines on plot
-  #geom_abline(slope = 0.751, intercept = 1.63) +
-  #geom_abline(slope = 1, intercept = 1, linetype = "dashed") +
+OP_outlierno <- ggplot(bm1_pred, aes(Predicted, Observed)) + geom_point() +
+  geom_abline() +
   theme_bw() +
   theme(text=element_text(family="Times New Roman", size=14),
         plot.margin = margin(10, 12, 10, 10))
@@ -532,9 +544,8 @@ dev.off( )
 load("CVflow_side.Rdata")
 flow_plus$class_1 <- as.factor(flow_plus$class_1) #"class" needs to be a factor
 #reorder it to show same watershed types next to each other on boxplot:
-flow_plus$class_1 <- factor(flow_plus$class_1, levels = c("0", "3", "10",
-                                                          "1", "2", "4", "5",
-                                                          "8", "6"))
+flow_plus$class_1 <- factor(flow_plus$class_1, levels = c("0", "3", "10", "8",
+                                                          "1", "2", "4", "5", "6"))
 
 flow_plot <- ggplot(flow_plus) +
   geom_boxplot(aes(x = class_1, y = CV_flow)) +

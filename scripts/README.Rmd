@@ -40,7 +40,8 @@ ____
 
 **App.to_MasterDataset.csv** This is the script where I added the covariate data to the Master_dataset.csv. As with the "Data Sources" folder, this script was created before I had good Rproject management skills and therefore does not utilize relative paths. All you need to know is that at some point I created a .csv that tailored all of the data in the first 9 columns of the Master_dataset.csv from the data in 2008_2019_HW_data_copy.csv, and then in this script I added the corresponding covariate data to each stream-year. Covariate data came from the "Data Sources" folder <br>
 
-**dead_count_additional_notes** -> not a script but a folder containing a couple of Rmd files that provide additional context or help with the dead_count_analysis.R script, which is a script that contains the analysis and methods for accounting for bias in the model response variable (which was not a simple task, hence the additional notes). For a complete description of why we needed to account for model response variable bias and how this was done, see "docs/Bayes_intro&Model_devo.docx"
+**dead_count_additional_notes** -> not a script but a folder containing a couple of Rmd files that provide additional context or help with the dead_count_analysis.R script, which is a script that contains the analysis and methods for accounting for bias in the model response variable (which was not a simple task, hence the additional notes). For a complete description of why we needed to account for model response variable bias and how this was done, see "docs/Bayes_intro&Model_devo.docx" <br>
+
 
 
 

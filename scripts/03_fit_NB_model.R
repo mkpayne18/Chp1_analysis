@@ -276,6 +276,11 @@ bm2 <- glmer.nb(Avg_number_strays ~ (1|Year) +
 
 #Save final model object as .rds for future use if necessary:
 saveRDS(bm1, file = "output/best_model.rds")
+#You will also want to save this object out of this script to your chapter 2
+#folder so that you can use it to make out-of-sample predictions. Save and export
+#directly from this script in case you make changes to the top model here
+saveRDS(bm2,
+        file = "~/Documents/CHUM_THESIS/Chp2_analysis/output/best_model2.rds")
 
 
 #Remove unneeded objects from this script

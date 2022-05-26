@@ -1,0 +1,74 @@
+---
+title: "Guide to the Analysis folder"
+author: "Molly Payne"
+date: "7/30/2021"
+output: html_document
+---
+
+## As of May 2022...
+
+I've significantly re-organized and improved my chp1 analysis folder, so this folder ("old_stuff") is more or less defunct. I've held onto it in case I find I need to reference something in it later on. **Model_fitting_3.R** was the main script I had been using previously to run my full analysis, which is now broken down into scripts 01-04 in the "scripts" folder. Much of the information in scripts 01-04 is identical to Model_fitting3.R, it's just better organized and more digestible. Similarly, **Manu_figs.R** contains the code that I now have moved over to scripts 05-07 in the "scripts" folder. The various Model_fittingX_objects.Rdata and Manu_figs_objects.RData files no longer exist individually because they were all lumped together into the Chp1_analysis.Rdata object, which I also no longer use. **Flow_dat_check.R**, **CVflow_side_analysis.R**, and **PCA_spatial_analysis.R** are still in use and have been moved over to the scripts folder. Below is the information from before describing other items in this folder <br>
+<br> 
+
+----
+
+
+
+1. **Model_fitting2.R and its objects file (Model_fitting2_objects.Rdata** contain my entire model development and fitting process for the preliminary version of my model. My process, particularly my EDA, were not rigorous enough, so I abandoned this script but have left it for reference. See Model_fitting3.R for the current model version
+
+2. **Model_fitting3.R and its objects file Model_fitting3_objects.Rdata** contains the entire model development and exploration process for my final model. It has the same response variable as Model_fitting2.R (Avg_number_strays) but the process is much more rigorous. It includes reading in the data, preliminary visualization and EDA, scaling of covariates, fitting the glmer.nb, selecting the final model, and the creation of a few figures which are model-specific and therefore not included in the figures R script (__Manu_figs.R__). This file is heavily commented out # so you can hopefully read through it and follow along pretty easily with my modeling process
+
+3. **Model_fitting4.R** Franz Mueter suggested I change my response variable to be the total number of hatchery strays detected in individual stream sampling events, rather than the average number across a season (year). While this would allow to me effectively deal with variation in survey effort, it would make my response variable non-independent and I don't have temporally finer scale Cons_Abundance and Pink_Abundance data to match with different points in the season. This script was me starting to do this analysis but abandoning it later
+
+
+4. **Master_dataset.csv** is the dataset I used for modeling, containing my response,
+stream and year and survey information, and all covariate data (untransformed and
+unscaled). There is an accompanying R script called **App.to_MasterDataset.R** 
+(short for "Append" to Master Dataset), which is where I linked all covariate
+data vectors to the response variable data to create the Master Dataset
+
+
+5. **Bayes_intro&Model_dev.docx** is the place where I wrote everything about the
+modeling process. There is information for my own learning, such as a section on
+what is logistic regression and what is a random effect. I've also included a 
+messy chronology of what my modeling process was, how it changed, and things that 
+committee members suggested/asked about. My results, model diagnostic plots, and
+any other thoughts about my model are included here. If you are wondering something
+about the model, I would recommend looking through this document. It is effectively
+a project log specific to the model. Note the name of the document is somewhat misleading as I didn't end up using a Bayesian model 
+
+6. **Manu_figs.R** is the script where I created almost all of my figures for my 
+manuscript (and powerpoint presentations prn). Note that a couple of my figures
+were created in **Model_fitting3.R** because they are more specific to the model.
+All figures created in this document were exported to the folder **Figs_Results**. Like the Model_fittingX.R files, it also has an objects folder called **Manu_figs_objects.R**
+
+7. **Figs_Results**. This is the folder containing figures created in __Manu_figs.R__ 
+and __Model_fitting3.R__. It also contains .csv files for tables that I created
+within my manuscript word document, as well as Avg_pred&obs.csv, which gives the
+model results from my best model next to their observed values 
+
+8. **2008-2019_HW_Data copy.csv** is the original dataset containing a row for each individual fish, with information on where and when it was sampled, if it was hatchery-origin or not, which hatchery it came from, and other data I wasn't as interested in for answering my question. I was using it to create survey-day specific response variable in Model_fitting4.R as per Franz Mueter's suggestion
+
+9. **Flow_dat_check.R** compares full model dataset flow data results (the model
+results that I am ultimately publishing) to a reduced model dataset that only 
+contains streams with Scenario A (accurate) mean_flow and CV_flow covariate data.
+I found that covariate magnitudes changed but conclusions did not, so I can feel
+good about my flow data. For more information, see "Hydro_methods_detail.docx" in 
+the Stream_hydro_Flow folder within the "Data Sources" folder
+
+10. **CVflow_side_analysis.R** contains the code for when (on 3/29/22) I looked
+at correlations between CV of flow values for my study streams and other water-
+shed characteristic data provided in Sergeant et al. 2020. I was feeling unsat-
+isfied with my hand-wavy explanation of the mechanism that explains why high and
+low CVs of flow were attractive to hatchery-origin salmon in my manuscript. There
+appears to be some possible correlation between snomelt-fed streams and the high
+and low CV of flow values, so I discuss and report data on this in my manuscript
+
+11. **CVflow_side.Rdata** is the .Rdata objects file for **CVflow_side_analysis.R**
+
+12. **PCA_spatial_analysis.R** is a short script that explores potentially spurious
+relationships between stream attractiveness and my model covariates, whereby 
+attractiveness might just be explained by the location of a stream on the landscape
+and not by the covariate in question. I don't think this is an issue after running
+the analysis within the PCA script, but check out the script and its description
+within **Bayes_intro&Model_dev.docx** for more information

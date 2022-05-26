@@ -1,0 +1,108 @@
+---
+title: "Metadata_explained"
+author: "Molly Payne"
+date: "5/24/2022"
+output: html_document
+---
+
+## Master_dataset.csv
+
+____
+**Subregion** The management subregion of Southeast Alaska into which each stream falls. There are 3: 1) Northern Southeast Inside (NSE Inside), 2) Northern Southeast Outside (NSE Outside), and 3) Southern Southeast (SSE) <br>
+
+**Year** and **StreamName** = self-explanatory <br>
+
+**Total_fish_sampled** The total number of (hatchery + wild origin) fish sampled on the stream in that year <br>
+
+**Number_H_fish** The number of hatchery-origin strays detected in the stream summed across all surveys in the same year out of the total number of fish sampled. Hence, you could calculate how many wild fish by subtracting Number_H_fish from Total_fish_sampled <br> 
+
+**Total_strays_by_subregion** The sum total Number_H_fish for all streams within shared subregions within the same year. E.g., for Big Goose Creek in 2008, this number is the sum of the total number of hatchery strays detected in all NSE Inside streams in 2008. NOTE that this column is no longer used. I previously included it in an early version of my response variable in which I calculated a proportion of strays out of subregion total <br>
+
+**Total_strays_all_SEAK** The sum total Number_H_fish for all streams within the same year. E.g., for Chaik Bay Creek in 2009, there were 416 total hatchery fish detected in SEAK streams in 2009 <br>
+
+**Number.of.surveys** The total number of surveys conducted on that stream in that year. E.g., 3 surveys on Big Goose Creek in 2008 <br>
+
+**Avg_number_strays** The average number of hatchery strays detected in a stream and year, calculated as the Number_H_fish / Number.of.surveys <br>
+
+**Fishery_harvest** (COVARIATE) The total fishery harvest of chum salmon (H + W) in the corresponding management subregion of SEAK, reported in units of individual salmon <br>
+
+**Cons_Abundance** (COVARIATE) The estimated population abundance of wild chum salmon in the stream, reported in units of individual salmon <br>
+
+**Cons_Density** (COVARIATE) The estimated population density of wild chum salmon in the stream, calculated as the abundance of chum salmon (Cons_Abundance) divided by the length of the stream in meters <br>
+
+**Pink_Abundance** (COVARIATE) The estimated abundance of pink salmon in the stream <br>
+
+**Pink_Density** (COVARIATE) The estimated population density of pink salmon in the stream, calculated as the abundance of pink salmon (Pink_Abundance) divided by the length of the stream in meters <br>
+
+**WMA_Releases_by_Yr** (COVARIATE) The weighted moving average of the number of hatchery chum salmon released within 40 KM of the stream 2-5 years prior to the year the stream was surveyed. Weighting was based on the age distribution of hatchery strays detected in the stream. I was able to deduce hatchery salmon age by the brood year on their markID, which is given in the 2008_2019_HW_Data_copy.csv <br>
+
+**Dist_nearest_H** (COVARIATE) The shortest hydrographic distance in KM from the mouth of each stream to the nearest hatchery. Note that this distance occasionally varies by year as some hatcheries were not operational during every year of this study <br>
+
+**Dist_nearest_R** (COVARIATE) The shortest hydrographic distance in KM from the mouth of each stream to the nearest hatchery release site. This distance also varies somewhat by year for each stream given that some release sites blinked on/off over the study period <br>
+
+**mean_flow** (COVARIATE) The mean absolute long-term (1979-2012) freshwater discharge from the watershed in which each stream falls. Most of the streams are the primary channel in their watershed, hence watershed discharge is considered to be an acceptable proxy for hydrologic conditions happening at the stream level. See Sergeant et al. 2020 (the original source of these data) for more info <br>
+
+**CV_flow** (COVARIATE) The coefficient of variation of long-term (1979-2012) FW discharge from the watershed in which each stream falls. The CV was calculated from the mean and SD of all estimated daily discharge values from 1979-2012. See Sergeant et al. 2020 for more info <br>
+
+**The original data and additional info for all the vectors labeled "(COVARIATE)" can be found in the "Data Sources" folder, which is where I tailored data for all proposed model covariates before I was GitHub and Rproject organization savvy. For now, I'm not going to go back and organize these files because that would be a ton of work. All you need to know is that you can find original, raw covariate data in the Data Sources folder and that I linked these covariate data to the Master_dataset.csv in the App.to_MasterDataset.R script** <br>
+<br>
+
+## StreamPoints.csv
+
+____
+**OBJECTID** An artifact of looking at streams in ArcGIS <br>
+
+**AWC** The anadromous waters catalog number for each stream. You can find the streams on the map here: <https://adfg.maps.arcgis.com/apps/MapSeries/index.html?appid=a05883caa7ef4f7ba17c99274f2c198f> <br>
+
+**Stream_Name** and **StreamName** = self-explanatory <br>
+
+**Latitude** and **Longitude** The GPS coordinates demarcating the mouth of each stream <br>
+
+**GIS_LABEL_ID** Another artifact of back when I was looking at my streams in ArcGIS (2019-2020 mostly). Each stream has a unique GIS label ID. This column probably doesn't mean anything anymore but might be helpful in case you look at something really old from an exploratory ArcGIS analysis <br>
+
+**Stream_Number** This is closely related, but not identical to the AWC for each stream. For some ridiculous reason, each stream has both an AWC and stream number, both of which ADFG uses depending on the context. In this project, the stream number was mostly for tailoring pink salmon data. You can find more info about this in the Pink_Dens&Abundance folder in "Data Sources" <br>
+
+**Location verified (3/22/21)** This means that I confirmed that every lat and long marking the mouth of each stream was correctly located at the mouth of each stream and that the lat and long corresponded to the named stream. A check in this column also means that I made sure the AWC # matched the stream name. In a few cases, some streams seem to have multiple AWC #s. I.e., there is an AWC associated with a stream in the Anadromous Waters Catalog (link above), but the 2008_2019_HW_data_copy.csv has a different AWC for some reason, or an ADFG report that referenced the stream has a different AWC. In this .csv, the AWC # assigned to each stream is the AWC # that matches the stream name on the AWC website. I noted streams that have multiple AWC #s in my project log document <br>
+<br> 
+
+## Hatchery_Locations.csv
+
+____
+
+Provides the latitude and longitude of all SEAK hatcheries that released chum salmon at any point during the relevant study time period (2003-2017 to correspond with 3-6 year-old fish returning to streams in 2008-2019) <br>
+<br>
+
+## Dist_nearest_Releas.csv
+
+____
+
+**StreamName** = self-explanatory <br>
+
+**X2008-X2019** (10 total columns excluding 2012 and 2016 when stream surveys didn't occur) These columns give the shortest hydrographic distance, in KM, from the mouth of each stream to the closest hatchery release site <br>
+
+**Release_site_type** Indicates whether the closest release site to each stream is on-site; located at a hatchery, or is remote; located separately and distant from the hatchery <br>
+<br>
+
+## 2008_2019_HW_Data_copy.csv
+
+____
+
+I downloaded this part of this dataset (2013-2019) from <hatcherywild.org>. It gives the AWC # and stream name of all streams sampled for hatchery chum salmon 2008-2019. The 2008-2011 portion was emailed to me by Andy Piston (bc those data came from Piston and Heinl 2012 paper) and was combined with the 2013-2019 portion to create this .csv. Check out the Stray_Data folder in "Data Sources" for more info and to see the original 2008-2011 dataset. <br>
+<br>
+
+Each row in this dataset is a single fish. The **From_H** ("from Hatchery") column has either a 1 to indicate that the fish was hatchery-origin or a 0 to indicate that is was not. **MarkID** indicates the thermal mark for each hatchery fish, which gives their hatchery of origin and brood year <br>
+<br>
+
+## survey_data.csv
+
+____
+
+I downloaded this .csv from <hatcherywild.org> under the stream survey reports, not the the stream specimens reports. It gives information about 2013-2019 surveys (each row is a survey, not a fish), such as the beginning and end locations, comments about stream conditions, and most importantly, the alive counts, dead counts, number of fish sampled, and number of strays detected. I used this information in the dead_count_analysis.R script to adjust for bias in my response variable. Important metadata to know is: <br>
+
+**DeadCount** This is the total number of dead fish present on the stream, which includes new (previously unsampled) + previously sampled fish all lumped together <br>
+
+**TotalCount** Live + dead count together <br>
+
+**NumberofSpecimens**  The total number of fish (H + W) that were sampled <br>
+
+Note that sometimes the number of specimens is GREATER than the dead count. This occurred when technicians sampled post-spawn fish that were still technically alive, hence these were counted as live fish instead of dead

@@ -1,0 +1,24 @@
+---
+title: "survey_data_guide"
+author: "Molly Payne"
+date: "5/25/2022"
+output: html_document
+---
+
+In case you get lost at all going through dead_count_analysis.R, this Rmd will walk you through how I tailored the raw data (survey_data.csv from hatcherywild.org) to the final version; survey_data8: <br>
+
+1. **survey_data** has n = 560 rows and 80 NA values in the dead count column
+
+2. **survey_data2** has n = 544 and 78 NA values because I deleted the 16 rows containing Hidden Inlet and North Arm Creek surveys (these are not included in model)
+
+3. **survey_data3** has n = 551 and 58 NA values. I manually added 2015 Sawmill Creek survey data from McConnell et al. 2018. **survey_data2** originally had 22 rows of Sawmill Creek surveys in 2015, and 2 of them DID have DeadCount data. Hence, the manual addition of McConnell et al. 2015 data reduced the number of NAs by 20, not 22 (78 - 58 NAs = 20). n = 551 now instead of 544 because 7 Sawmill Creek 2015 surveys were added from McConnell et al. 2018 that were not originally included in the survey _data download
+
+4. **survey_data4** has n = 550 and NA = 30. I removed a fake survey (Admiralty Creek 7/18/2019 in science center tent) which reduced n by 1 and I interpolated 27 of the 2013-2015 dead counts, thereby reducing the NAs by 27 after one was removed: 58 - 1 - 27 = 30 NAs
+
+5. **survey_data5** has n = 550 and 18 NAs. In interpolated the 12 missing dead counts in the 2017-2019 surveys, reducing the number of dead count NAs from 30 to 18 now
+
+6. **survey_data6** has n = 550 and 18 NAs. I adjusted the 2014 fitness streams' dead counts by subtracting the previous day's dead counts (2014 streams were sampled daily or every other day), see Bayes_intro&Model_Devo.docx for more info. No change to number of NAs in this section
+
+7. **survey_data7** n = 715 and NA = 18. I added the 2008-2011 modeled dead count estimates, thereby increasing the total number of rows
+
+8. **survey_data8** n = 715 and there are no dead count NAs! I interpolated the remaining 18 missing dead counts (which were for 2013-2015 surveys)

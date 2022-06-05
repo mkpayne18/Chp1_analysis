@@ -164,8 +164,8 @@ R_type2 <- R_type2[!duplicated(R_type2$StreamName),]
 fig2 <- ggplot(data = R_type2, aes(x = Dist_nearest_R, y = Avg_number_strays,
                                    shape = Release_site_type)) + geom_point(size = 3.5) +
   theme_classic() + scale_shape_manual(values = c(16, 2)) +
-  xlab("Distance to the Nearest Release Site (KM)") +
-  ylab("Average Number of Hatchery Strays") + labs(shape = "Release Site Type") +
+  xlab("Distance to the nearest release site (km)") +
+  ylab("Average number of hatchery strays") + labs(shape = "Release site type") +
   theme(axis.text = element_text(size = 12)) +
   theme(axis.title = element_text(size = 13)) +
   theme(legend.text = element_text(size = 11.5)) +
@@ -331,7 +331,7 @@ flow_plus$class_1 <- factor(flow_plus$class_1, levels = c("0", "3", "10", "8",
 
 flow_plot <- ggplot(flow_plus) +
   geom_boxplot(aes(x = class_1, y = CV_flow)) +
-  labs(x = "Watershed Type", y = "CV of Streamflow") +
+  labs(x = "Watershed type", y = "CV of streamflow") +
   theme_bw() +
   theme(text = element_text(family = "Times New Roman", size = 16)) +
   #theme(axis.text.x = element_text(angle = 90)) +

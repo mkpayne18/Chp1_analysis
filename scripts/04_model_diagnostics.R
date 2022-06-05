@@ -209,6 +209,9 @@ abline(lm(Mean_obs_strays ~ Mean_pred_strays, data = mean_bm1_pred), col = "red"
 #Save predicted and observed vals for future use
 saveRDS(bm1_pred, file = "output/pred_and_obs_vals_unaveraged.rds")
 saveRDS(mean_bm1_pred, file = "output/mean_pred_and_obs_vals.rds")
+#Also send to chapter 2 output
+saveRDS(mean_bm1_pred,
+        file = "~/Documents/CHUM_THESIS/Chp2_analysis/output/mean_bm1_pred.rds")
 
 
 

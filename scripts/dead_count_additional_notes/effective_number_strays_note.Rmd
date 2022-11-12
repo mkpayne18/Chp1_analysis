@@ -3,10 +3,12 @@ title: "effective_number_strays_note"
 author: "Molly Payne"
 date: "5/24/2022"
 output:
-  html_document: default
   word_document: default
+  html_document: default
   pdf_document: default
 ---
+This is the same document that can be found in "Chp1_analysis/docs" folder, FYI
+
 The total effective number of strays column for a given stream-year in the 
 new_response_var object (your new response variable as of May 2022) will not 
 always equal the number of hatchery strays / proportion sampled for a stream-year because you set the proportions sampled that were greater than 1 equal to 1 instead. An example is Admiralty Creek 2009, which had 2 surveys:

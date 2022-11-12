@@ -282,6 +282,14 @@ saveRDS(bm1, file = "output/best_model.rds")
 saveRDS(bm2,
         file = "~/Documents/CHUM_THESIS/Chp2_analysis/output/best_model2.rds")
 
+### NOTE ###
+#You appear to have used bm1 in scripts 04-07, but bm2 results are reported in
+#your final thesis. When working on your manuscript, be sure to update scripts
+#04-07 to use bm2 instead of bm1. bm2 should be used if you continue to define
+#your best model as the most parsimonious model with 2 AICc of the lowest AICc.
+#bm2 is also necessary for use in chapter 2, where conspecific abundance data is
+#lacking for most out-of-sample streams -MPayne 11/12/22
+
 
 #Remove unneeded objects from this script
 rm(Cons_A, CV_f, harvest, mean_f, NB_mod2, Pink_A, WMA, XNB_mod2, i, x, y)

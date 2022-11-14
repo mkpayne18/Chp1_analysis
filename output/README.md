@@ -1,9 +1,7 @@
----
-title: "README"
+
 author: "Molly Payne"
 date: "5/25/2022"
 output: html_document
----
 
 **new_response_var.rds** was created in **dead_count_analysis.R** and indicates the total effective number of strays by stream-year, which is the number of hatchery fish detected / proportion of total dead sampled (adjusts for bias in response variable). The Avg_number_strays is the Total_effective_strays divided by the number of surveys and is what I used to substitute my response variable after May 2022 <br>
 

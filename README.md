@@ -1,6 +1,7 @@
 SEAK stream attractiveness to stray hatchery-origin chum salmon analysis
 Molly Payne
 5/25/2022
+
 Purpose
 
 To develop a modeling framework to predict the number of hatchery-origin chum salmon straying into (spawning in) streams in Southeast Alaska from 2008-2019 using stream characteristics as model covariates (chapter 1 of my MS thesis). All of the folders in this repository have their own README.md files that explain the contents (except for figs, which is self-explanatory). However, I note two of the folders which might warrant further explanation:

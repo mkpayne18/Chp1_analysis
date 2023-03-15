@@ -26,3 +26,4 @@ All you need to know is that raw covariate data, raw response (number of strays 
 
 The user may also find it helpful to know is that within the "docs" folder is a document called **Bayes_intro&Model_dev.docx**. This document was effectively my lab notebook for this entire analysis and is where I noted any changes to my process, things I was thinking about or that were suggested by co-authors, and probably the explanation for whatever else you might be wondering about when going through these files
 
+Update March 2023: The data folder is no longer on Github since I am downgrading to a free (and public) Github account and hatchery data is proprietary. Please contact me to access data to run code

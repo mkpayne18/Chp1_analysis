@@ -13,6 +13,7 @@ require(corrgram)
 require(Hmisc)
 require(geosphere)
 require(ape)
+require(lattice)
 
 source("scripts/01_stray_data_load_and_clean.R") #Note that this will load pack-
 #ages associated with this script (in this case tidyverse and dplyr) in addition
@@ -197,15 +198,17 @@ summary(aov(log(stray_dat$Avg_number_strays + 1) ~ stray_dat$Year)) #differences
 
 ### Variation in years for explanatory variables 
 par(mfrow=c(2,2))
-for(i in names(stray_dat)[7:12]) {
+for(i in names(stray_dat)[7:10]) { #don't need to include mean_flow or CV_flow
+  #(cols 11 and 12) because their data does not vary by year)
   x <- stray_dat$Year
   y <- stray_dat[,i]
   plot(x, y, xlab="Year")
   title(i)
 } #clear differences between years for all variables except maybe Cons_Abundance,
-#Pink_Abundance, and mean_flow. Year should be included as a random effect as
-#expected. Ignore CV_flow and mean_flow plots since their data does not vary
-#over time
+#Pink_Abundance, and mean_flow. Though, note that some of the differences for years
+#2017-2019 in particular are due to sampling being reduced to a subset of 4
+#streams. Regardless, year should be included as a random effect as so as to be
+#able to make inferences across years.
 par(mfrow=c(1,1))
 
 
@@ -221,9 +224,8 @@ for (i in names(stray_dat)[7:12]) {
                xlab = i))
 }
 rm(i, x, y)
-#Some relationships vary greatly across years, but I think this has to do with
-#variation in which sites were included and not inherent difference in the slope
-#of the relationship(?). However, given that the response does differ signif-
+#Relationships with response variable mostly consistent across years, random slopes
+#probably not necessary. However, given that the response does differ signif-
 #icantly by year, I should include year as a random intercept. Test for better
 #model fit with and w/o year random intercept in your model development script
 
@@ -300,7 +302,6 @@ diag(dist_mat_inv) <- 0
 ape::Moran.I(spatio_sum3$Number_Strays, dist_mat_inv) #p = 0.34, fail to reject 
 #null = no spatial autocorrelation occurring 
 
-
 #Remove uneeded objects
 rm(spat, spatio_sum, spatio_sum2, spatio_sum3, dist_mat, dist_mat_inv)
 
@@ -326,9 +327,3 @@ rm(spat, spatio_sum, spatio_sum2, spatio_sum3, dist_mat, dist_mat_inv)
 
 # No evidence of spatial autocorrelation in the response. Probably no temporal
 #autocorrelation either but double-check it in your residuals later on
-
-
-
-
-
-

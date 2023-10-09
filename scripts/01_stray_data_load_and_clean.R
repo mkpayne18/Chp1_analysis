@@ -87,6 +87,6 @@ rm(Master_dataset)
 stray_dat #dataset to use for modeling. Read into EDA script next
 
 #Send this object over to chapter 2 as well
-saveRDS(stray_dat,
-        file = "~/Documents/CHUM_THESIS/Chp2_analysis/output/stray_dat.rds")
+# saveRDS(stray_dat,
+#         file = "~/Documents/CHUM_THESIS/Chp2_analysis/output/stray_dat.rds")
 

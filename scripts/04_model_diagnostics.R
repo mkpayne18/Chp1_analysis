@@ -11,6 +11,7 @@
 require(lmtest)
 require(lattice)
 require(performance)
+require(Metrics)
 
 source("scripts/03_fit_NB_model.R")
 
@@ -120,7 +121,7 @@ cross_val <- function(dat, mod, mae_vec, mean_mae_vec){
       
       predictions <- mod %>% predict(test) 
       exp.pred <- exp(predictions)
-      mae <- MAE(exp.pred, test$Avg_number_strays, na.rm = TRUE)
+      mae <- mae(exp.pred, test$Avg_number_strays)#, na.rm = TRUE)
       mae_vec[i] <- mae
     }
     mean_mae_vec[j] <- mean(mae_vec)

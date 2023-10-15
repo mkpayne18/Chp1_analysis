@@ -8,7 +8,7 @@
 # binomial error distribution to predict the average (effective) number of hatch-
 # ery strays in a stream and year
 
-# Last updated: May 19, 2022
+# Last updated: October 15, 2023
 #-------------------------------------------------------------------------------
 require(lme4)
 require(MuMIn)
@@ -252,43 +252,37 @@ NBmod_dredge <- dredge(NB_mod3, rank = "AICc")
 #in max iterations in glmerControl above. But when I check the coefficient esti-
 #mates in head(NBmod_dredge) below, they are the close to the same as in the
 #summary(NB_mod3) output, which did not have convergence issues. So, I think it
-#is fine to proceed(?)
+#is fine to proceed.
 
 head(NBmod_dredge)
 saveRDS(NBmod_dredge, "output/NBmod_dredge.rds")
 
 
-#The top two models account for 53.7% of the total model weight, so I will average
-#the results from those two and disregard the remaining models
-bm1 <- glmer.nb(Avg_number_strays ~ (1|Year) + Cons_Abundance + WMA_Releases_by_Yr
-                + CV_flow + I(CV_flow^2), data = stray_dat_scaled) #'bm' for "best model"
-bm2 <- glmer.nb(Avg_number_strays ~ (1|Year) +
+#Keep the most parsimonious model within 2 AICc of the top model. Note that in
+#this case the top 2 models have almost exact same AICc, therefore are explaining
+#about equal amounts of variation in the response.
+bm1 <- glmer.nb(Avg_number_strays ~ (1|Year) +
                   WMA_Releases_by_Yr + CV_flow + I(CV_flow^2),
-                data = stray_dat_scaled)
-#Note that creating new model fits (bm1, bm2) is not exactly equivalent to extrac-
-#ting the model coefficients from the MuMIn::dredge() object. I created new model
-#objects so that I could make predictions from the model separately, and then 
-#average the predictions while leaving the coefficients alone. When comparing 
+                data = stray_dat_scaled) #'bm' for best model
+bm2 <- glmer.nb(Avg_number_strays ~ (1|Year) + Cons_Abundance + WMA_Releases_by_Yr +
+                  CV_flow + I(CV_flow^2), data = stray_dat_scaled) #not relevant
+#to this analysis (only to chapter 2 of MS thesis), but retain so that you can
+#report some of its diagnostics in paper.
+
+#Note that creating new model fits (like bm1) is not exactly equivalent to extrac-
+#ting the model coefficients from the MuMIn::dredge() object. When comparing 
 #coefs in summary(bmX) to the equivalent model in straymod_dredge, I find that 
 #the coefficient estimates only differ at the 4th decimal place (if they even do
-#differ), so I think my approach is acceptable
+#differ), so this approach is acceptable.
 
 
 #Save final model object as .rds for future use if necessary:
 saveRDS(bm1, file = "output/best_model.rds")
 #You will also want to save this object out of this script to your chapter 2
 #folder so that you can use it to make out-of-sample predictions. Save and export
-#directly from this script in case you make changes to the top model here
-saveRDS(bm2,
-        file = "~/Documents/CHUM_THESIS/Chp2_analysis/output/best_model2.rds")
-
-### NOTE ###
-#You appear to have used bm1 in scripts 04-07, but bm2 results are reported in
-#your final thesis. When working on your manuscript, be sure to update scripts
-#04-07 to use bm2 instead of bm1. bm2 should be used if you continue to define
-#your best model as the most parsimonious model with 2 AICc of the lowest AICc.
-#bm2 is also necessary for use in chapter 2, where conspecific abundance data is
-#lacking for most out-of-sample streams -MPayne 11/12/22
+#directly from this script in case you make changes to the top model here:
+# saveRDS(bm2,
+#         file = "~/Documents/CHUM_THESIS/Chp2_analysis/output/best_model2.rds")
 
 
 #Remove unneeded objects from this script

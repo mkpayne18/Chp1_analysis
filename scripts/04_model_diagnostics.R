@@ -146,7 +146,7 @@ cross_val(stray_dat_scaled, bm1, mae_bm1, mean_mae_bm1) #for stray_dat_scaled
 cross_val(stray_dat_sub, bm1, mae_bm1, mean_mae_bm1) #for stray_dat_sub, the
 #mean MAE is 6.31 
 
-#Second best model
+#Second best model, only for reporting purposes:
 #mean_mae_bm2 <- vector(length = 10)
 #mae_bm2 <- vector(length = 500)
 #cross_val(stray_dat_scaled, bm2, mae_bm2, mean_mae_bm2) #for stray_dat_scaled
@@ -211,8 +211,8 @@ abline(lm(Mean_obs_strays ~ Mean_pred_strays, data = mean_bm1_pred), col = "red"
 saveRDS(bm1_pred, file = "output/pred_and_obs_vals_unaveraged.rds")
 saveRDS(mean_bm1_pred, file = "output/mean_pred_and_obs_vals.rds")
 #Also send to chapter 2 output
-saveRDS(mean_bm1_pred,
-        file = "~/Documents/CHUM_THESIS/Chp2_analysis/output/mean_bm1_pred.rds")
+# saveRDS(mean_bm1_pred,
+#         file = "~/Documents/CHUM_THESIS/Chp2_analysis/output/mean_bm1_pred.rds")
 
 
 

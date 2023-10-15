@@ -9,7 +9,6 @@
 # Last updated: May 18, 2022
 #-------------------------------------------------------------------------------
 require(tidyverse)
-require(dplyr)
 
 #Read in data containing response variable (number of strays in a stream and
 #year) and covariate data
@@ -85,6 +84,9 @@ rm(Master_dataset)
 
 ### Final output from this script:
 stray_dat #dataset to use for modeling. Read into EDA script next
+
+#Also save as RDS to be pulled into data vis scripts later on:
+saveRDS(stray_dat, "output/stray_dat.rds")
 
 #Send this object over to chapter 2 as well
 # saveRDS(stray_dat,

@@ -20,19 +20,27 @@ require(rnaturalearthdata)
 require(rgeos)
 require(dplyr)
 
-source("scripts/04_model_diagnostics.R") #NOTE that this will take several min-
+# source("scripts/04_model_diagnostics.R") #NOTE that this will take several min-
 #utes to run. If you don't have it loaded already, you can instead just load the
 #needed objects from previous scripts:
+bm1 <- readRDS("output/best_model.rds")
 mean_bm1_pred <- readRDS("output/mean_pred_and_obs_vals.rds")
 StreamPoints <- read.csv("data/StreamPoints.csv")
+stray_dat <- readRDS("output/stray_dat.rds")
+stray_dat_scaled <- readRDS("output/stray_dat_scaled.rds")
 
 
 #1. Observed # of strays + hatchery locations map ==============================
 ### This is currently figure 1 of the manuscript/thesis
 
 #1.1. Data tailoring for map ===================================================
+bm1 #top model developed and selected from scripts 01-04. This was the most
+#parsimonious model with 2 AICc of the lowest AICc.
 mean_bm1_pred #contains mean predicted and observed values for each stream
 StreamPoints #contains lat and long for each stream
+stray_dat #un-scaled (but clean) covariate data which includes the updated response
+#var, average effective # of strays
+stray_dat_scaled #scaled (z-score standardized vals for data used to fit model)
 
 
 ### Create dataframe for mapping:
@@ -122,10 +130,10 @@ fig1b <- fig1a + inset(grob = ggplotGrob(alaska), xmin = -133, xmax = -130,
 fig1b
 
 #Export as high-res figure
-tiff("figs/fig1.tiff", width = 7, height = 6, pointsize = 12, units = 'in',
-     res = 300)
-fig1b
-dev.off( ) #now the displayed graphs are saved to a file with the above file name
+# tiff("figs/fig1.tiff", width = 7, height = 6, pointsize = 12, units = 'in',
+#      res = 300)
+# fig1b
+# dev.off( ) #now the displayed graphs are saved to a file with the above file name
 
 
 #Remove unneeded objects
@@ -140,10 +148,11 @@ rm(surv, usa_can, world, H_llocs )
 #This is currently figure 2 of the manuscript/thesis
 
 #2.1. Data tailoring ===========================================================
-Master_dataset <- read.csv("data/Master_dataset.csv")
-plot(Avg_number_strays ~ Dist_nearest_R, data = Master_dataset)
+stray_dat
+
+plot(Avg_number_strays ~ Dist_nearest_R, data = stray_dat)
 Dist_nearest_Releas <- read.csv("data/Dist_nearest_Releas.csv")
-R_type <- left_join(Master_dataset, Dist_nearest_Releas, by = "StreamName")
+R_type <- left_join(stray_dat, Dist_nearest_Releas, by = "StreamName")
 R_type <- as.data.frame(R_type)
 sum(is.na(R_type$Release_site_type))
 
@@ -172,7 +181,6 @@ fig2 <- ggplot(data = R_type2, aes(x = Dist_nearest_R, y = Avg_number_strays,
   theme(legend.title = element_text(size = 14)) +
   theme(text=element_text(family="Times New Roman", size=12))
 fig2
-
 #briefly quantitatively compare the average number of hatchery strays within 40km
 #of release for on-site vs remote release sites
 R_type40km <- R_type2[R_type2$Dist_nearest_R <= 40, ]
@@ -182,10 +190,10 @@ t.test(onsite, Remote) #streams near hatchery on-site releases averaged 19.3 str
 #while remote site-proximate streams averaged 38.6 strays. p = 0.34 (not significant)
 
 #Export as high-res figure
-tiff("figs/fig2.tiff", width = 7, height = 5, pointsize = 12, units = 'in',
-     res = 300)
-fig2 #graph that you want to export
-dev.off( ) #now the displayed graphs are saved to a file with the above file name
+# tiff("figs/fig2.tiff", width = 7, height = 5, pointsize = 12, units = 'in',
+#      res = 300)
+# fig2 #graph that you want to export
+# dev.off( ) #now the displayed graphs are saved to a file with the above file name
 
 
 #Remove unneeded items
@@ -215,28 +223,29 @@ create_eff <- function(mod_term){
 
 
 #3.1. Conspecific abundance effect plot ========================================
-x_Cons <- create_eff(Cons_Abundance)
-#there's probably a better way to do this, but here is my method for now:
-#un-scale the data
-mean(stray_dat$Cons_Abundance, na.rm = T) #3021
-sd(stray_dat$Cons_Abundance, na.rm = T) #4277
-x_Cons$Cons_Abundance <- (x_Cons$Cons_Abundance * 4277) + 3021
-
-
-#Create plot
-Cons_plot <- ggplot() +
-  geom_line(data = x_Cons, aes(x = Cons_Abundance, y=fit)) +
-  geom_ribbon(data = x_Cons,
-              aes(x = Cons_Abundance, ymin = lower, ymax = upper),
-              alpha= 0.3, fill="grey70") +
-  xlab("Chum salmon abundance") +
-  ylab("Attractiveness index") + theme_classic() +
-  theme(axis.title = element_text(size = 15)) +
-  theme(axis.text = element_text(size = 14)) +
-  theme(text=element_text(family="Times New Roman")) #+
-#geom_point(data = trunc_Avg_strays, aes(x = Cons_Abundance,
-#y = Avg_number_strays)) #+ ylim(0, 20)
-Cons_plot 
+#not included in top model
+# x_Cons <- create_eff(Cons_Abundance)
+# #there's probably a better way to do this, but here is my method for now:
+# #un-scale the data
+# mean(stray_dat$Cons_Abundance, na.rm = T) #3021
+# sd(stray_dat$Cons_Abundance, na.rm = T) #4277
+# x_Cons$Cons_Abundance <- (x_Cons$Cons_Abundance * 4277) + 3021
+# 
+# 
+# #Create plot
+# Cons_plot <- ggplot() +
+#   geom_line(data = x_Cons, aes(x = Cons_Abundance, y=fit)) +
+#   geom_ribbon(data = x_Cons,
+#               aes(x = Cons_Abundance, ymin = lower, ymax = upper),
+#               alpha= 0.3, fill="grey70") +
+#   xlab("Chum salmon abundance") +
+#   ylab("Attractiveness index") + theme_classic() +
+#   theme(axis.title = element_text(size = 15)) +
+#   theme(axis.text = element_text(size = 14)) +
+#   theme(text=element_text(family="Times New Roman")) #+
+# #geom_point(data = trunc_Avg_strays, aes(x = Cons_Abundance,
+# #y = Avg_number_strays)) #+ ylim(0, 20)
+# Cons_plot 
 
 
 
@@ -303,10 +312,10 @@ all_effects_plot2 <- annotate_figure(all_effects_plot,
 #vertical
 
 #Export
-tiff('figs/effects_plots.tiff', width = 9, height = 5, pointsize = 12,
-     units = 'in', res = 300)
-all_effects_plot2
-dev.off()
+# tiff('figs/effects_plots.tiff', width = 9, height = 5, pointsize = 12,
+#      units = 'in', res = 300)
+# all_effects_plot2
+# dev.off()
 
 
 
@@ -342,10 +351,10 @@ flow_plot <- ggplot(flow_plus) +
 flow_plot
 
 #Export as high-res figure
-tiff("figs/CVflow_side_plot.tiff", width = 8.5, height = 4.2, pointsize = 12,
-     units = 'in', res = 300)
-flow_plot #graph that you want to export
-dev.off( ) 
+# tiff("figs/CVflow_side_plot.tiff", width = 8.5, height = 4.2, pointsize = 12,
+#      units = 'in', res = 300)
+# flow_plot #graph that you want to export
+# dev.off( ) 
 
 
 

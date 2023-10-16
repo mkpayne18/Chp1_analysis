@@ -8,11 +8,10 @@
 
 # Last updated: May 23, 2022
 #-------------------------------------------------------------------------------
-require(dplyr)
 require(tidyverse)
 require(tidyr)
 
-source("scripts/04_model_diagnostics.R") #NOTE that this will take several min-
+#source("scripts/04_model_diagnostics.R") #NOTE that this will take several min-
 #utes to run. If you don't have it loaded already, you can instead just load the
 #needed objects from previous scripts:
 mean_bm1_pred <- readRDS("output/mean_pred_and_obs_vals.rds")
@@ -60,7 +59,7 @@ tab2c[,c(2,3,6)] <- sapply(tab2c[,c(2,3,6)], function(x) round(x, 1))
 
 
 #Export
-write.csv(tab2c, "figs/tab2_pred_obs.csv")
+# write.csv(tab2c, "figs/tab2_pred_obs.csv")
 
 
 #Note that there are other tables included in the manuscript, however, those

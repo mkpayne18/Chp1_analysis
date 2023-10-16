@@ -32,11 +32,11 @@ bias_plot <- ggplot() +
 bias_plot
 
 #Export as high-res figure
-tiff("figs/supplemental/bias_plot.tiff", width = 8, height = 7, pointsize = 12,
-     units = 'in',
-     res = 300)
-bias_plot #graph that you want to export
-dev.off( )
+# tiff("figs/supplemental/bias_plot.tiff", width = 8, height = 7, pointsize = 12,
+#      units = 'in',
+#      res = 300)
+# bias_plot #graph that you want to export
+# dev.off( )
 
 
 
@@ -55,11 +55,11 @@ obs_pred_plot2 <- obs_pred_plot + coord_cartesian(clip = "off")
 obs_pred_plot2
 
 #Export
-tiff("figs/supplemental/obs_pred_plot.tiff", width = 8, height = 7, pointsize = 12,
-     units = 'in',
-     res = 300)
-obs_pred_plot2
-dev.off( )
+# tiff("figs/supplemental/obs_pred_plot.tiff", width = 8, height = 7, pointsize = 12,
+#      units = 'in',
+#      res = 300)
+# obs_pred_plot2
+# dev.off( )
 
 
 
@@ -92,11 +92,11 @@ resid_plots <- ggarrange(dev_resid_plot, pea_resid_plot, ncol = 2)
 resid_plots
 
 #Export as high-res figure
-tiff("figs/supplemental/resid_plots.tiff", width = 8, height = 4,
-     pointsize = 12, units = 'in',
-     res = 300)
-resid_plots 
-dev.off( ) 
+# tiff("figs/supplemental/resid_plots.tiff", width = 8, height = 4,
+#      pointsize = 12, units = 'in',
+#      res = 300)
+# resid_plots 
+# dev.off( ) 
 
 
 
@@ -117,7 +117,7 @@ AICc_tab <- as.data.frame(head(NBmod_dredge, 5))
 AICc_tab2 <- AICc_tab[,c(2:9,11,12)]
 AICc_tab2 <- sapply(AICc_tab2, function(x) round(x, 2))
 
-write.csv(AICc_tab2, "figs/supplemental/AICc_logLi_table.csv")
+# write.csv(AICc_tab2, "figs/supplemental/AICc_logLi_table.csv")
 
 
 
@@ -132,7 +132,7 @@ StreamPoints <- read.csv("data/StreamPoints.csv")
 pred_obs_supp <- left_join(tab2, StreamPoints, by = "StreamName")
 pred_obs_supp <- pred_obs_supp[,c(2,14,15,3:6,8)]
 
-write.csv(pred_obs_supp, "figs/supplemental/pred_obs_table.csv")
+# write.csv(pred_obs_supp, "figs/supplemental/pred_obs_table.csv")
 
 
 
@@ -177,7 +177,7 @@ tables5$`Attractiveness index (average effective number of strays)` <-
 #slightly greater than would be expected. See docs/effective_number_strays_note.
 #Rmd for more info
 
-write.csv(tables5, "figs/supplemental/stream_year_info.csv")
+# write.csv(tables5, "figs/supplemental/stream_year_info.csv")
 
 
 

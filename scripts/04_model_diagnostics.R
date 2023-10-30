@@ -239,7 +239,7 @@ AICc(no_out) #much lower AICc
 #cross validate:
 mean_mae_out <- vector(length = 10)
 mae_out <- vector(length = 500)
-cross_val(no_out_dat, no_out, mean_mae_out, mae_out) #mean mae of 0.173! The mod
+cross_val(no_out_dat, no_out, mae_out, mean_mae_out) #mean mae of 8.66, The mod
 #with outliers removed predicts better
 
 summary(bm1)

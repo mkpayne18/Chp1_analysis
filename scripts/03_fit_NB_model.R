@@ -117,17 +117,15 @@ rm(mod, mtrx, NB_mod1, i)
 XNB_mod2 <- glmer.nb(Avg_number_strays ~ (1|Year) + Fishery_harvest +
                       Cons_Abundance + Pink_Abundance + WMA_Releases_by_Yr +
                       mean_flow + CV_flow + I(CV_flow^2) +
-                      WMA_Releases_by_Yr:Cons_Abundance, data = stray_dat_scaled)
+                      WMA_Releases_by_Yr:mean_flow, data = stray_dat_scaled)
 AICc(NB_mod2) #current best AICc = 955.77
 AICc(XNB_mod2)
-#Fishery_harvest:Cons_Abundance = 957.98
 #Fishery_harvest:Pink_Abundance = 957.32
 #Cons_Abundance:Pink_Abundance = 956.31
 #Cons_Abundance:mean_flow = 957.07
 #Cons_Abundance:CV_flow = 958.00
 #Pink_Abundance:mean_flow = 956.09
-#Pink_Abundance:CV_flow = 955.56 ####
-#WMA_Releases_by_Yr:Cons_Abundance = 954.11 ####
+#Pink_Abundance:CV_flow = 955.56 #not greater than 2 AICc difference
 #WMA_Releases_by_Yr:Pink_Abundance = 957.72
 #WMA_Releases_by_Yr:mean_flow = 953.02 ####
 #WMA_Releases_by_Yr:CV_flow = 957.59
@@ -139,12 +137,6 @@ summary(XNB_mod2) #However, WMA_Releases_by_Yr:mean_flow has collinearity
 #WMA_Releases_by_Yr interaction because it improves model fit and does not have
 #collinearity issues
 
-
-####
-
-#### For the sake of getting your thesis done on time, ignore the Cons_Abundance:
-#WMA_Releases_by_Yr interaction for now (until the manuscript stage). Come back
-#and include it again later on 
 
 #Global model
 summary(NB_mod2)

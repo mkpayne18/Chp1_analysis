@@ -142,7 +142,7 @@ stray_dat_sub <- stray_dat_scaled[stray_dat_scaled$Avg_number_strays < 40,] #40
 mean_mae_bm1 <- vector(length = 10)
 mae_bm1 <- vector(length = 500)
 cross_val(stray_dat_scaled, bm1, mae_bm1, mean_mae_bm1) #for stray_dat_scaled
-#(full dataset including large obs. values), the mean MAE is 10.99
+#(full dataset including large obs. values), the mean MAE is 11.03
 cross_val(stray_dat_sub, bm1, mae_bm1, mean_mae_bm1) #for stray_dat_sub, the
 #mean MAE is 6.31 
 
@@ -158,7 +158,7 @@ cross_val(stray_dat_sub, bm1, mae_bm1, mean_mae_bm1) #for stray_dat_sub, the
 mean_mae_null <- vector(length = 10)
 mae_null <- vector(length = 500)
 cross_val(stray_dat_scaled, null_model, mae_null, mean_mae_null) #for stray_dat_
-#scaled (full dataset including large obs. values), the mean MAE is 14.89
+#scaled (full dataset including large obs. values), the mean MAE is 14.86
 cross_val(stray_dat_sub, null_model, mae_null, mean_mae_null) #for sub_f_scaled,
 #the mean MAE is 8.27
 
@@ -223,14 +223,53 @@ saveRDS(mean_bm1_pred, file = "output/mean_pred_and_obs_vals.rds")
 #In the EDA script, outliers were identified for Pink_Abundance and mean_flow
 #covariates, neither of which remain in the final model. However, I will still 
 #check for other outliers
-out <- cooks.distance(influence(bm1, obs = T))
+out <- cooks.distance(influence(bm1))
 class(out)
 out <- as.data.frame(out)
 out$out <- round(out$out, 2)
-which(out$out > 0.2) #no outliers (cook's distance > 0.2)
-#identify(qqnorm(residuals(bm1, type = "pearson")))
+which(out$out > 0.2) #outliers are records 42 and 162
 
-rm(out)
+#Refit model w/o outliers and compare
+no_out_dat <- stray_dat_scaled[-c(42, 162),]
+no_out <- glmer.nb(Avg_number_strays ~ (1|Year) + WMA_Releases_by_Yr +
+                     CV_flow + I(CV_flow^2), data = no_out_dat)
+AICc(bm1)
+AICc(no_out) #much lower AICc
+
+#cross validate:
+mean_mae_out <- vector(length = 10)
+mae_out <- vector(length = 500)
+cross_val(no_out_dat, no_out, mean_mae_out, mae_out) #mean mae of 0.173! The mod
+#with outliers removed predicts better
+
+summary(bm1)
+summary(no_out) #conclusions do not change
+
+#Compare predictions of attractiveness:
+no_out_pred <- as.data.frame(fitted(no_out))
+no_out_pred <- cbind.data.frame(no_out_dat$Year, no_out_dat$StreamName,
+                             no_out_pred, no_out_dat$Avg_number_strays)
+new_names <- c("Year", "StreamName", "Predicted", "Observed")
+no_out_pred <- no_out_pred %>% rename_at(1:4, ~ new_names)
+
+mean_out_pred <- no_out_pred %>% group_by(StreamName) %>%
+  summarise(Mean_pred_strays = mean(Predicted),
+            Mean_obs_strays = mean(Observed)) %>% arrange(desc(Mean_pred_strays))
+mean_bm1_pred <- mean_bm1_pred %>% arrange(desc(Mean_pred_strays))
+
+head(mean_out_pred, n = 10)
+head(mean_bm1_pred, n = 10) #not much difference
+tail(mean_out_pred, n = 10)
+tail(mean_bm1_pred, n = 10) #no difference
+
+## This seems like a grey area to me. The mod w/o outliers clearly makes more
+#accurate predictions, but the conclusions around the covariates do not change
+#and the relative attractiveness of streams doesn't appreciably deviate either.
+#I do not believe the outlier observed values of attractiveness to be errors, so
+#I will leave them in place.
+
+
+rm(out, no_out_dat, no_out_pred, no_out, mean_out_pred)
 
 
 

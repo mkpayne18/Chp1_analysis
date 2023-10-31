@@ -6,7 +6,7 @@
 
 # Purpose of this script: Load and clean straying data
 
-# Last updated: May 18, 2022
+# Last updated: October 15, 2023
 #-------------------------------------------------------------------------------
 require(tidyverse)
 
@@ -76,11 +76,8 @@ stray_dat <- stray_dat3 #overwrite your former dataset
 #the Total_effective_strays / Number_surveys
 
 #Remove un-needed items
-rm(stray_dat2)
-rm(stray_dat3)
-rm(new_response_var)
-rm(delete)
-rm(Master_dataset)
+rm(stray_dat2, stray_dat3, new_response_var, delete, Master_dataset)
+
 
 ### Final output from this script:
 stray_dat #dataset to use for modeling. Read into EDA script next

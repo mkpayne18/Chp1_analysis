@@ -7,7 +7,7 @@
 # Purpose of this script: Exploratory data analysis of response variable and 
 # covariates prior to modeling
 
-# Last updated: May 18, 2022 #test commit with new PAT created on ORNRC computer
+# Last updated: October 30, 2023
 #-------------------------------------------------------------------------------
 require(corrgram)
 require(Hmisc)
@@ -21,6 +21,7 @@ source("scripts/01_stray_data_load_and_clean.R") #Note that this will load pack-
 
 #Model data (response + covariates) from stray_data_load_and_clean.R:
 stray_dat
+sapply(stray_dat, function(x) sum(is.na(x)))
 
 
 
@@ -90,8 +91,7 @@ write.csv(corr_matrix, "figs/supplemental/corr_matrix.csv")
 
 
 #Remove unneeded objects
-rm(response_table)
-rm(stray_vars)
+rm(response_table, stray_vars, corr_matrix, COR)
 
 
 

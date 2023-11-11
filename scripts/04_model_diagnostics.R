@@ -112,14 +112,19 @@ cross_val <- function(dat, mod, mae_vec, mean_mae_vec){
   for(j in 1:10){
     for (i in 1:500) {
       train <- dat %>% 
-        group_by(Year) %>% mutate(group = sample(n())/n() > 0.7) #0.7 for a 70-30
+        group_by(Year) %>% mutate(group = sample(n())/n() > 0.8) #0.8 for an 80-20
       #cross-validation
       
+      #split data into training (80%) and test (20%) datasets
       splitdf <- split(train, train$group)
       training <- splitdf[["FALSE"]]
       test <- splitdf[["TRUE"]]
       
-      predictions <- mod %>% predict(test) 
+      #train (fit) the model on the training set
+      mod2 <- glmer.nb(formula(mod), data = training)
+      
+      #validate on the test set, i.e., see how well mod predicts 'new' (test) data
+      predictions <- mod2 %>% predict(test) 
       exp.pred <- exp(predictions)
       mae <- mae(exp.pred, test$Avg_number_strays)#, na.rm = TRUE)
       mae_vec[i] <- mae
@@ -142,23 +147,23 @@ stray_dat_sub <- stray_dat_scaled[stray_dat_scaled$Avg_number_strays < 40,] #40
 mean_mae_bm1 <- vector(length = 10)
 mae_bm1 <- vector(length = 500)
 cross_val(stray_dat_scaled, bm1, mae_bm1, mean_mae_bm1) #for stray_dat_scaled
-#(full dataset including large obs. values), the mean MAE is 11.03
+#(full dataset including large obs. values), the mean MAE is 10.98
 cross_val(stray_dat_sub, bm1, mae_bm1, mean_mae_bm1) #for stray_dat_sub, the
 #mean MAE is 6.31 
 
 #Second best model, only for reporting purposes:
-#mean_mae_bm2 <- vector(length = 10)
-#mae_bm2 <- vector(length = 500)
-#cross_val(stray_dat_scaled, bm2, mae_bm2, mean_mae_bm2) #for stray_dat_scaled
-#(full dataset including large obs. values), the mean MAE is 11.00
-#cross_val(stray_dat_sub, bm2, mae_bm2, mean_mae_bm2) #for stray_dat_sub, the
-#mean MAE is 6.31
+mean_mae_bm2 <- vector(length = 10)
+mae_bm2 <- vector(length = 500)
+cross_val(stray_dat_scaled, bm2, mae_bm2, mean_mae_bm2) #for stray_dat_scaled
+#(full dataset including large obs. values), the mean MAE is 10.51
+cross_val(stray_dat_sub, bm2, mae_bm2, mean_mae_bm2) #for stray_dat_sub, the
+#mean MAE is 6.15
 
 #Null model 
 mean_mae_null <- vector(length = 10)
 mae_null <- vector(length = 500)
 cross_val(stray_dat_scaled, null_model, mae_null, mean_mae_null) #for stray_dat_
-#scaled (full dataset including large obs. values), the mean MAE is 14.86
+#scaled (full dataset including large obs. values), the mean MAE is 14.89
 cross_val(stray_dat_sub, null_model, mae_null, mean_mae_null) #for sub_f_scaled,
 #the mean MAE is 8.27
 

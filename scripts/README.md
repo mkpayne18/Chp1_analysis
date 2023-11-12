@@ -1,7 +1,6 @@
 ## Contains scripts used to tailor data, develop model and perform various supplemental analyses with the overall goal of developing a model to predict stream attractiveness to stray hatchery-origin chum salmon
 
 ### Molly Payne
-### 5/24/2022
 ### Main analysis scripts
 
 ____

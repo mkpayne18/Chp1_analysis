@@ -134,42 +134,32 @@ cross_val <- function(dat, mod, mae_vec, mean_mae_vec){
   return(mean(mean_mae_vec))
 }
 
-
-#Note that the prediction accuracy varies greatly depending on how large the obs.
-#value is (much greater error for large values because there are fewer of them).
-#Observe this by excluding the largest observed values in the model fitting with
-#the stray_dat_sub dataset vs full stray_dat_scaled dataset
-stray_dat_sub <- stray_dat_scaled[stray_dat_scaled$Avg_number_strays < 40,] #40
-#is an approximate break in the data
-
+## Model predicts small vals (avg strays < 40) more accurately:
+#included previously to show that model predicts smaller vals more accurately, but
+#after correcting cross validation approach to fit with training set and validate
+#with test set (previously I had incorrectly trained the model with the full OG
+#dataset and didn't notice my mistake), the model training can no longer converge
+# stray_dat_sub <- stray_dat_scaled[stray_dat_scaled$Avg_number_strays < 40,]
 
 #Top model 
 mean_mae_bm1 <- vector(length = 10)
 mae_bm1 <- vector(length = 500)
-cross_val(stray_dat_scaled, bm1, mae_bm1, mean_mae_bm1) #for stray_dat_scaled
-#(full dataset including large obs. values), the mean MAE is 10.98
-cross_val(stray_dat_sub, bm1, mae_bm1, mean_mae_bm1) #for stray_dat_sub, the
-#mean MAE is 6.31 
+cross_val(stray_dat_scaled, bm1, mae_bm1, mean_mae_bm1) #mean MAE = 12.51
 
 #Second best model, only for reporting purposes:
 mean_mae_bm2 <- vector(length = 10)
 mae_bm2 <- vector(length = 500)
-cross_val(stray_dat_scaled, bm2, mae_bm2, mean_mae_bm2) #for stray_dat_scaled
-#(full dataset including large obs. values), the mean MAE is 10.51
-cross_val(stray_dat_sub, bm2, mae_bm2, mean_mae_bm2) #for stray_dat_sub, the
-#mean MAE is 6.15
+cross_val(stray_dat_scaled, bm2, mae_bm2, mean_mae_bm2) #mean MAE = 11.99
 
-#Null model 
-mean_mae_null <- vector(length = 10)
-mae_null <- vector(length = 500)
-cross_val(stray_dat_scaled, null_model, mae_null, mean_mae_null) #for stray_dat_
-#scaled (full dataset including large obs. values), the mean MAE is 14.89
-cross_val(stray_dat_sub, null_model, mae_null, mean_mae_null) #for sub_f_scaled,
-#the mean MAE is 8.27
+#Null model - this no longer converges when you remove 20% of the data, after
+#correcting cross validation function
+# mean_mae_null <- vector(length = 10)
+# mae_null <- vector(length = 500)
+# cross_val(stray_dat_scaled, null_model, mae_null, mean_mae_null)
 
 
 #Remove unneeded objects
-rm(stray_dat_sub, mae_bm1, mae_null, mean_mae_bm1, mean_mae_null)
+rm(mae_bm1, mae_null, mean_mae_bm1, mean_mae_null)
 
 
 
@@ -244,8 +234,8 @@ AICc(no_out) #much lower AICc
 #cross validate:
 mean_mae_out <- vector(length = 10)
 mae_out <- vector(length = 500)
-cross_val(no_out_dat, no_out, mae_out, mean_mae_out) #mean mae of 8.66, The mod
-#with outliers removed predicts better
+cross_val(no_out_dat, no_out, mae_out, mean_mae_out) #the mod with outliers re-
+#moved predicts better
 
 summary(bm1)
 summary(no_out) #conclusions do not change
@@ -282,7 +272,7 @@ rm(out, no_out_dat, no_out_pred, no_out, mean_out_pred)
 
 
 #8. Calculate pseudo-R^2 for final model =======================================
-MuMIn::r.squaredGLMM(bm1, null = null_model)
+MuMIn::r.squaredGLMM(bm2, null = null_model)
 ?r.squaredGLMM #use trigamma R^2 estimates. R2m is the marginal R^2, which gives
 #the variance explained by the fixed effects only. R2c is the conditional R^2,
 #which gives the variance explained by the entire model (FE and RE together)

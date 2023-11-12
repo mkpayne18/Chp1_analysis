@@ -272,7 +272,8 @@ rm(out, no_out_dat, no_out_pred, no_out, mean_out_pred)
 
 
 #8. Calculate pseudo-R^2 for final model =======================================
-MuMIn::r.squaredGLMM(bm2, null = null_model)
+MuMIn::r.squaredGLMM(bm1, null = null_model)
+MuMIn::r.squaredGLMM(bm2, null = null_model) #also for mod2
 ?r.squaredGLMM #use trigamma R^2 estimates. R2m is the marginal R^2, which gives
 #the variance explained by the fixed effects only. R2c is the conditional R^2,
 #which gives the variance explained by the entire model (FE and RE together)

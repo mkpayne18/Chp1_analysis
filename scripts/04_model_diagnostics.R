@@ -145,11 +145,14 @@ cross_val <- function(dat, mod, mae_vec, mean_mae_vec){
 mean_mae_bm1 <- vector(length = 10)
 mae_bm1 <- vector(length = 500)
 cross_val(stray_dat_scaled, bm1, mae_bm1, mean_mae_bm1) #mean MAE = 12.51
+#30 ish warnings about convergence issues each time function is run. 30 out of
+#500 iterations is OK
 
 #Second best model, only for reporting purposes:
 mean_mae_bm2 <- vector(length = 10)
 mae_bm2 <- vector(length = 500)
 cross_val(stray_dat_scaled, bm2, mae_bm2, mean_mae_bm2) #mean MAE = 11.99
+#also 30 ish warnings about convergence
 
 #Null model - this no longer converges when you remove 20% of the data, after
 #correcting cross validation function

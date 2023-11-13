@@ -160,6 +160,9 @@ cross_val(stray_dat_scaled, bm2, mae_bm2, mean_mae_bm2) #mean MAE = 11.99
 # mae_null <- vector(length = 500)
 # cross_val(stray_dat_scaled, null_model, mae_null, mean_mae_null)
 
+#calculate mae for full dataset instead:
+mae(fitted(null_model), stray_dat_scaled$Avg_number_strays) #14.603
+
 
 #Remove unneeded objects
 rm(mae_bm1, mae_null, mean_mae_bm1, mean_mae_null)

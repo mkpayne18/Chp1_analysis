@@ -25,6 +25,9 @@ ____
 
 **07_supplemental_materials.R** Create figures and tables for supplemental sections of manuscript and thesis
 
+**Scripts 01-07 all use relative paths which pull from a 'data' folder. CONTACT ME AT**
+**MKPAYNE18@GMAIL.COM TO ACCESS DATA. Other scripts (below) may or not may not use**
+**relative paths but data can be provided to run them if requested.**
 
 
 ### Other scripts

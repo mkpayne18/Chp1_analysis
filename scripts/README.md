@@ -17,8 +17,11 @@ ____
 
 **06_tables.R** Create tables for manuscript and thesis using results from scripts 01-04 (primarily 03_fit_NB_model.R) <br>
 
-**07_supplemental_materials.R** Create figures and tables for supplemental sections of manuscript and thesis
+**07_supplemental_materials.R** Create figures and tables for supplemental sections of manuscript and thesis <br>
 
+**Scripts 01-07 all use relative paths which pull from a 'data' folder. CONTACT ME AT**
+**MKPAYNE18@GMAIL.COM TO ACCESS DATA. Other scripts (below) may or not may not use**
+**relative paths but data can be provided to run them if requested.**
 
 
 ### Other scripts

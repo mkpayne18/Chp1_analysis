@@ -64,8 +64,8 @@ Hatchery_Locations <- cbind.data.frame(Hatchery_Locations, H_llocs)
 
 #1.2. Create the map ===========================================================
 ### SEAK area basemap:
-myMap <- get_stamenmap(location <- c(-137, 54.5, -130, 59.5), zoom = 6,
-                       maptype = "terrain-background", crop = TRUE)
+myMap <- get_stadiamap(location <- c(-137, 54.5, -130, 59.5), zoom = 6,
+                       maptype = "stamen_terrain", crop = TRUE)
 ggmap(myMap)
 
 

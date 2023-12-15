@@ -8,6 +8,7 @@
 
 # Last updated: May 23, 2022
 #-------------------------------------------------------------------------------
+require(tidyverse)
 require(ggplot2)
 require(ggmap)
 require(ggspatial)
@@ -17,8 +18,7 @@ require(effects)
 require(sf)
 require(rnaturalearth)
 require(rnaturalearthdata)
-require(rgeos)
-require(dplyr)
+#require(rgeos)##
 
 # source("scripts/04_model_diagnostics.R") #NOTE that this will take several min-
 #utes to run. If you don't have it loaded already, you can instead just load the
@@ -56,9 +56,8 @@ data_for_map <- left_join(data_for_map, surv, by = "StreamName")
 Hatchery_Locations <- read.csv("data/Hatchery_Locations.csv")
 
 #remove Wally Noerenberg and Nitinat River hatcheries
-Hatchery_Locations <- Hatchery_Locations[c(1:12), ]
-H_llocs <- rep("Hatchery locations", 12)
-Hatchery_Locations <- cbind.data.frame(Hatchery_Locations, H_llocs)
+Hatchery_Locations <- Hatchery_Locations %>% slice(1:12) %>%
+  mutate(H_llocs = "Hatchery locations")
 
 
 
@@ -94,6 +93,7 @@ fig1 <- ggmap(myMap) + geom_point(aes(x = Longitude, y = Latitude,
            y.max = 54.95, dist = 50, dist_unit = "km",
            transform = T, height = 0.4, st.dist = 0.6,
            st.size = 4)
+
 fig1
 
 
@@ -130,7 +130,7 @@ fig1b <- fig1a + inset(grob = ggplotGrob(alaska), xmin = -133, xmax = -130,
 fig1b
 
 #Export as high-res figure
-# tiff("figs/fig1.tiff", width = 7, height = 6, pointsize = 12, units = 'in',
+# tiff("figs/fig1.tiff", width = 18, height = 18, pointsize = 12, units = 'cm',
 #      res = 300)
 # fig1b
 # dev.off( ) #now the displayed graphs are saved to a file with the above file name
@@ -175,10 +175,10 @@ fig2 <- ggplot(data = R_type2, aes(x = Dist_nearest_R, y = Avg_number_strays,
   theme_classic() + scale_shape_manual(values = c(16, 2)) +
   xlab("Distance to the nearest release site (km)") +
   ylab("Average number of hatchery strays") + labs(shape = "Release site type") +
-  theme(axis.text = element_text(size = 12)) +
-  theme(axis.title = element_text(size = 13)) +
-  theme(legend.text = element_text(size = 11.5)) +
-  theme(legend.title = element_text(size = 14)) +
+  theme(axis.text = element_text(size =12)) + #12 before
+  theme(axis.title = element_text(size = 13)) +#13 before
+  theme(legend.text = element_text(size = 11.5)) +#11.5 before
+  theme(legend.title = element_text(size = 14)) +#14 before
   theme(text=element_text(family="Times New Roman", size=12))
 fig2
 #briefly quantitatively compare the average number of hatchery strays within 40km
@@ -186,14 +186,14 @@ fig2
 R_type40km <- R_type2[R_type2$Dist_nearest_R <= 40, ]
 onsite <- R_type40km$Avg_number_strays[R_type40km$Release_site_type == "On-site"]
 Remote <- R_type40km$Avg_number_strays[R_type40km$Release_site_type == "Remote"]
-t.test(onsite, Remote) #streams near hatchery on-site releases averaged 19.3 strays
-#while remote site-proximate streams averaged 38.6 strays. p = 0.34 (not significant)
+t.test(onsite, Remote) #streams near hatchery on-site releases averaged 21.6 strays
+#while remote site-proximate streams averaged 71.8 strays. p = 0.21 (not significant)
 
 #Export as high-res figure
-# tiff("figs/fig2.tiff", width = 7, height = 5, pointsize = 12, units = 'in',
-#      res = 300)
-# fig2 #graph that you want to export
-# dev.off( ) #now the displayed graphs are saved to a file with the above file name
+tiff("figs/fig2.tiff", width = 8.5, height = 8.5, pointsize = 12, units = 'cm',
+     res = 300)
+fig2 #graph that you want to export
+dev.off() #now the displayed graphs are saved to a file with the above file name
 
 
 #Remove unneeded items

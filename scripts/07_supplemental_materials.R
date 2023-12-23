@@ -6,37 +6,37 @@
 
 # Purpose of this script: Create supplemental tables and figs for thesis/manuscript
 
-# Last updated: May 23, 2022
+# Last updated: December 19, 2023
 #-------------------------------------------------------------------------------
 library(ggplot2)
 library(ggpubr)
-library(dplyr)
+library(tidyverse)
 
 
 
 #### FIGURES ###################################################################
 #1. Bias in response variable graph ============================================
 prop_1 <- readRDS("output/prop_1.rds") #contains total dead counts and number of
-#fish sampled for all streams where the ratio number sampled/dead count was < 1,
-#which was the majority of streams. The ratio was only ever > 1 if live fish were
-#sampled early in the season
+#fish sampled
 
 bias_plot <- ggplot() +
-  geom_point(data = prop_1, aes(x = DeadCount, y = NumberofSpecimens)) +
+  geom_point(data = prop_1, aes(x = DeadCount, y = NumberofSpecimens),
+             size = 0.5) +
   geom_abline() +
   labs(y = "Number of carcasses sampled",
        x = "Total number of carcasses in stream") +
   theme_bw() +
-  theme(text = element_text(family="Times New Roman", size = 14)) +
-  theme(axis.text = element_text(size = 14))
+  theme(text = element_text(family="Times New Roman", size = 7.5)) +
+  theme(axis.text = element_text(size = 7.5))
 bias_plot
 
 #Export as high-res figure
-# tiff("figs/supplemental/bias_plot.tiff", width = 8, height = 7, pointsize = 12,
-#      units = 'in',
-#      res = 300)
-# bias_plot #graph that you want to export
-# dev.off( )
+# tiff("figs/supplemental/bias_plot.tiff", width = 8.5, height = 7,
+#      pointsize = 12,
+#      units = 'cm',
+#      res = 600)
+# bias_plot
+# dev.off()
 
 
 
@@ -46,20 +46,22 @@ bias_plot
 #2. Observed vs model predicted indices (not averaged) =========================
 bm1_pred <- readRDS("output/pred_and_obs_vals_unaveraged.rds")
 
-obs_pred_plot <- ggplot(bm1_pred, aes(Predicted, Observed)) + geom_point() +
-  geom_abline() +
+obs_pred_plot <- ggplot(bm1_pred, aes(Predicted, Observed)) +
+  geom_point(size = 0.5) +
+  geom_abline(linewidth = 0.3) +
   theme_bw() +
-  theme(text = element_text(family = "Times New Roman", size = 16),
+  theme(text = element_text(family = "Times New Roman", size = 8),
         plot.margin = margin(10, 12, 10, 10))
 obs_pred_plot2 <- obs_pred_plot + coord_cartesian(clip = "off")
 obs_pred_plot2
 
 #Export
-# tiff("figs/supplemental/obs_pred_plot.tiff", width = 8, height = 7, pointsize = 12,
-#      units = 'in',
-#      res = 300)
+# tiff("figs/supplemental/obs_pred_plot.tiff", width = 8.5, height = 7,
+#      pointsize = 12,
+#      units = 'cm',
+#      res = 600)
 # obs_pred_plot2
-# dev.off( )
+# dev.off()
 
 
 
@@ -71,9 +73,10 @@ bm1 <- readRDS("output/best_model.rds")
 
 dev_resid <- data.frame(deviance_resid = residuals(bm1, type = "deviance"),
                         pred = fitted(bm1))
-dev_resid_plot <- ggplot(dev_resid, aes(pred, deviance_resid)) + geom_point() +
+dev_resid_plot <- ggplot(dev_resid, aes(pred, deviance_resid)) +
+  geom_point(size = 0.4) +
   xlab("Model predicted values") + ylab("Deviance residuals") + theme_bw() +
-  theme(text = element_text(family = "Times New Roman", size = 14),
+  theme(text = element_text(family = "Times New Roman", size = 5.5),
         plot.margin = margin(8, 8, 10, 8))
 dev_resid_plot
 
@@ -81,9 +84,10 @@ dev_resid_plot
 
 pea_resid <- data.frame(pearson_resid = residuals(bm1, type = "pearson"),
                         pred = fitted(bm1))
-pea_resid_plot <- ggplot(pea_resid, aes(pred, pearson_resid)) + geom_point() +
+pea_resid_plot <- ggplot(pea_resid, aes(pred, pearson_resid)) +
+  geom_point(size = 0.4) +
   xlab("Model predicted values") + ylab("Pearson residuals") + theme_bw() +
-  theme(text = element_text(family= "Times New Roman", size= 14),
+  theme(text = element_text(family= "Times New Roman", size= 5.5),
         plot.margin = margin(8, 8, 10, 8))
 pea_resid_plot
 
@@ -92,11 +96,11 @@ resid_plots <- ggarrange(dev_resid_plot, pea_resid_plot, ncol = 2)
 resid_plots
 
 #Export as high-res figure
-# tiff("figs/supplemental/resid_plots.tiff", width = 8, height = 4,
-#      pointsize = 12, units = 'in',
-#      res = 300)
-# resid_plots 
-# dev.off( ) 
+# tiff("figs/supplemental/resid_plots.tiff", width = 8.5, height = 4,
+#      pointsize = 12, units = 'cm',
+#      res = 600)
+# resid_plots
+# dev.off()
 
 
 

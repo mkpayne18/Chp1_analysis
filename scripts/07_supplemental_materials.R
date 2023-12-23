@@ -26,8 +26,8 @@ bias_plot <- ggplot() +
   labs(y = "Number of carcasses sampled",
        x = "Total number of carcasses in stream") +
   theme_bw() +
-  theme(text = element_text(family="Times New Roman", size = 7.5)) +
-  theme(axis.text = element_text(size = 7.5))
+  theme(text = element_text(family="Times New Roman", size = 6.5)) +
+  theme(axis.text = element_text(size = 6))
 bias_plot
 
 #Export as high-res figure
@@ -50,8 +50,10 @@ obs_pred_plot <- ggplot(bm1_pred, aes(Predicted, Observed)) +
   geom_point(size = 0.5) +
   geom_abline(linewidth = 0.3) +
   theme_bw() +
-  theme(text = element_text(family = "Times New Roman", size = 8),
-        plot.margin = margin(10, 12, 10, 10))
+  theme(text = element_text(family = "Times New Roman", size = 7),
+        plot.margin = margin(10, 12, 10, 10),
+        panel.border = element_rect(colour = "black",
+                                    fill = NA, linewidth = 0.1))
 obs_pred_plot2 <- obs_pred_plot + coord_cartesian(clip = "off")
 obs_pred_plot2
 

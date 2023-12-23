@@ -341,19 +341,20 @@ flow_plot <- ggplot(flow_plus) +
                outlier.size = 0.5) +
   labs(x = "Watershed type", y = "CV of streamflow") +
   theme_bw() +
-  theme(text = element_text(family = "Times New Roman", size = 6)) +
+  theme(text = element_text(family = "Times New Roman", size = 7)) +
   #theme(axis.text.x = element_text(angle = 90)) +
   scale_x_discrete(labels = c("0" = "Rain-0", "1" = "Snow-1", "2" = "Snow-2",
                               "3" = "Rain-3", "4" = "Snow-4", "5" = "Snow-5",
                               "6" = "Glacier-6", "8" = "Rain-snow-8",
-                              "10" = "Rain-10"))
+                              "10" = "Rain-10")) +
+  rotate_x_text(angle = 35)
 flow_plot
 
 #Export as high-res figure
-# tiff("figs/CVflow_side_plot.tiff", width = 8.5, height = 4.2, pointsize = 12,
-#      units = 'cm', res = 600)
-# flow_plot
-# dev.off()
+tiff("figs/CVflow_side_plot.tiff", width = 8.5, height = 4.2, pointsize = 12,
+     units = 'cm', res = 600)
+flow_plot
+dev.off()
 
 
 

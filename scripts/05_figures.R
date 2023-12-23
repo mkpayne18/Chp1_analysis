@@ -264,8 +264,8 @@ WMA_plot <- ggplot() +
               alpha= 0.3, fill="grey70") +
   xlab("Number of fish released within 40 km") +
   ylab("Attractiveness index") + theme_classic() +
-  theme(axis.title = element_text(size = 11)) +
-  theme(axis.text = element_text(size = 11)) +
+  theme(axis.title = element_text(size = 13)) +
+  theme(axis.text = element_text(size = 11.5)) +
   theme(text=element_text(family="Times New Roman")) #+
 #geom_point(data = trunc_Avg_strays, aes(x = WMA_Releases_by_Yr,
 #y = Avg_number_strays))#+ ylim(0, 20)
@@ -289,8 +289,8 @@ CVflow_plot <- ggplot() +
   xlab("CV of streamflow") +
   ylab("ln(predicted attractiveness index)") + theme_classic() +
   ylab("Attractiveness Index") + theme_classic() +
-  theme(axis.title = element_text(size = 11)) +
-  theme(axis.text = element_text(size = 11)) +
+  theme(axis.title = element_text(size = 13)) +
+  theme(axis.text = element_text(size = 11.5)) +
   theme(text=element_text(family="Times New Roman")) +
   xlim(0.395, 0.61) + ylim(0, 99)
 CVflow_plot #gives you a warning about 3 removed rows; that is because of the 
@@ -309,10 +309,10 @@ all_effects_plot2 <- annotate_figure(all_effects_plot,
                                    size = 12, family = "Times", rot = 90))
 
 #Export
-# tiff('figs/effects_plots.tiff', width = 18, height = 9, pointsize = 12,
-#      units = 'cm', res = 600)
-# all_effects_plot2
-# dev.off()
+tiff('figs/effects_plots.tiff', width = 18, height = 9, pointsize = 12,
+     units = 'cm', res = 600)
+all_effects_plot2
+dev.off()
 
 
 

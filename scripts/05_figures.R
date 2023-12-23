@@ -63,7 +63,7 @@ Hatchery_Locations <- Hatchery_Locations %>% slice(1:12) %>%
 
 #1.2. Create the map ===========================================================
 ### SEAK area basemap:
-myMap <- get_stadiamap(location <- c(-137, 54.5, -130, 59.5), zoom = 6,
+myMap <- get_stadiamap(location <- c(-137, 54.5, -130, 59.5), zoom = 9,
                        maptype = "stamen_terrain", crop = TRUE)
 ggmap(myMap)
 
@@ -76,11 +76,12 @@ fig1 <- ggmap(myMap) + geom_point(aes(x = Longitude, y = Latitude,
                                   data = data_for_map) +
   scale_size_continuous(range = c(2, 10)) +
   xlab("Longitude") + ylab("Latitude") + theme(axis.text = element_text(size = 12)) +
-  theme(axis.title = element_text(size = 13)) +
-  theme(legend.text = element_text(size = 11.5)) +
-  theme(legend.title = element_text(size = 14)) +
-  theme(legend.key=element_blank()) + labs(size = "Mean observed index",
-                                           fill = "Number of surveys") +
+  theme(axis.title = element_text(size = 13),
+        legend.text = element_text(size = 11.5),
+        legend.title = element_text(size = 14),
+        legend.key=element_blank(),
+        panel.border = element_rect(colour = "black", fill=NA)) +
+  labs(size = "Mean observed index", fill = "Number of surveys") +
   theme(text = element_text(family = "Times New Roman", size = 12)) +
   ggspatial::annotation_north_arrow( #direction arrow code chunk
     location = "bl", which_north = "true",
@@ -89,7 +90,7 @@ fig1 <- ggmap(myMap) + geom_point(aes(x = Longitude, y = Latitude,
       fill = c("grey40", "white"),
       line_col = "grey20",
       text_family = "Times New Roman")) +
-  scalebar(x.min = -136.9, x.max = -134.9, y.min = 54.75,
+  scalebar(x.min = -137.15, x.max = -135.15, y.min = 54.75,
            y.max = 54.95, dist = 50, dist_unit = "km",
            transform = T, height = 0.4, st.dist = 0.6,
            st.size = 4)
@@ -118,9 +119,10 @@ alaska <- ggplot(data = usa_can) +
                                                        ymax = 1270000),
                                                    fill = "transparent",
                                                    color = "black", size = 1.5) +
-  theme(plot.margin=grid::unit(c(0,0,0,0), "mm")) #this last plot.margin part re-
-#moves the white margin that shows up around the plot when you insert it as an 
-#inset map
+  theme(plot.margin=grid::unit(c(0,0,0,0), "mm"),
+        panel.border = element_rect(colour = "black", fill=NA)) #this last
+#plot.margin part removes the white margin that shows up around the plot when you 
+#insert it as an inset map
 alaska #nice!
 
 
@@ -131,13 +133,12 @@ fig1b
 
 #Export as high-res figure
 # tiff("figs/fig1.tiff", width = 18, height = 18, pointsize = 12, units = 'cm',
-#      res = 300)
+#      res = 600)
 # fig1b
-# dev.off( ) #now the displayed graphs are saved to a file with the above file name
-
+# dev.off()
 
 #Remove unneeded objects
-rm(surv, usa_can, world, H_llocs )
+rm(surv, usa_can, world)
 
 
 
@@ -156,9 +157,7 @@ R_type <- left_join(stray_dat, Dist_nearest_Releas, by = "StreamName")
 R_type <- as.data.frame(R_type)
 sum(is.na(R_type$Release_site_type))
 
-#Find row with max avg number of strays for each stream; only for streams with 
-#at least 2 observations (that way there is something to take the max of AND we
-#have slightly more confidence in designating the stream as attractive or not)
+#Find row with max avg number of strays for each stream
 R_type2 <- R_type %>% group_by(StreamName) %>% filter(Avg_number_strays == max(Avg_number_strays))
 #Note that this^^ returns multiple rows if the max value is the same for any 
 #streams (e.g., Little Goose Creek). Remove duplicate rows
@@ -171,15 +170,15 @@ R_type2 <- R_type2[!duplicated(R_type2$StreamName),]
 
 #2.2. Create figure ============================================================
 fig2 <- ggplot(data = R_type2, aes(x = Dist_nearest_R, y = Avg_number_strays,
-                                   shape = Release_site_type)) + geom_point(size = 3.5) +
+                                   shape = Release_site_type)) + geom_point(size = 1.5) +
   theme_classic() + scale_shape_manual(values = c(16, 2)) +
   xlab("Distance to the nearest release site (km)") +
   ylab("Average number of hatchery strays") + labs(shape = "Release site type") +
-  theme(axis.text = element_text(size =12)) + #12 before
-  theme(axis.title = element_text(size = 13)) +#13 before
-  theme(legend.text = element_text(size = 11.5)) +#11.5 before
-  theme(legend.title = element_text(size = 14)) +#14 before
-  theme(text=element_text(family="Times New Roman", size=12))
+  theme(axis.text = element_text(size = 7.5),
+        axis.title = element_text(size = 7),
+        legend.text = element_text(size = 7),
+        legend.title = element_text(size = 7),
+        text=element_text(family="Times New Roman"))
 fig2
 #briefly quantitatively compare the average number of hatchery strays within 40km
 #of release for on-site vs remote release sites
@@ -190,10 +189,10 @@ t.test(onsite, Remote) #streams near hatchery on-site releases averaged 21.6 str
 #while remote site-proximate streams averaged 71.8 strays. p = 0.21 (not significant)
 
 #Export as high-res figure
-tiff("figs/fig2.tiff", width = 8.5, height = 8.5, pointsize = 12, units = 'cm',
-     res = 300)
-fig2 #graph that you want to export
-dev.off() #now the displayed graphs are saved to a file with the above file name
+# tiff("figs/fig2.tiff", width = 8.5, height = 7, pointsize = 12, units = 'cm',
+#      res = 600)
+# fig2
+# dev.off()
 
 
 #Remove unneeded items
@@ -240,8 +239,8 @@ create_eff <- function(mod_term){
 #               alpha= 0.3, fill="grey70") +
 #   xlab("Chum salmon abundance") +
 #   ylab("Attractiveness index") + theme_classic() +
-#   theme(axis.title = element_text(size = 15)) +
-#   theme(axis.text = element_text(size = 14)) +
+#   theme(axis.title = element_text(size = 11)) +
+#   theme(axis.text = element_text(size = 11)) +
 #   theme(text=element_text(family="Times New Roman")) #+
 # #geom_point(data = trunc_Avg_strays, aes(x = Cons_Abundance,
 # #y = Avg_number_strays)) #+ ylim(0, 20)
@@ -265,8 +264,8 @@ WMA_plot <- ggplot() +
               alpha= 0.3, fill="grey70") +
   xlab("Number of fish released within 40 km") +
   ylab("Attractiveness index") + theme_classic() +
-  theme(axis.title = element_text(size = 15)) +
-  theme(axis.text = element_text(size = 14)) +
+  theme(axis.title = element_text(size = 11)) +
+  theme(axis.text = element_text(size = 11)) +
   theme(text=element_text(family="Times New Roman")) #+
 #geom_point(data = trunc_Avg_strays, aes(x = WMA_Releases_by_Yr,
 #y = Avg_number_strays))#+ ylim(0, 20)
@@ -290,11 +289,11 @@ CVflow_plot <- ggplot() +
   xlab("CV of streamflow") +
   ylab("ln(predicted attractiveness index)") + theme_classic() +
   ylab("Attractiveness Index") + theme_classic() +
-  theme(axis.title = element_text(size = 15)) +
-  theme(axis.text = element_text(size = 14)) +
+  theme(axis.title = element_text(size = 11)) +
+  theme(axis.text = element_text(size = 11)) +
   theme(text=element_text(family="Times New Roman")) +
-  xlim(0.45, 0.61) + ylim(0, 25)
-CVflow_plot #gives you a warning about 2 removed rows; that is because of the 
+  xlim(0.395, 0.61) + ylim(0, 99)
+CVflow_plot #gives you a warning about 3 removed rows; that is because of the 
 #x-limit I set in the line above
 
 
@@ -307,13 +306,11 @@ all_effects_plot <- ggarrange(WMA_plot + rremove("ylab"),
 all_effects_plot2 <- annotate_figure(all_effects_plot,
                   left = text_grob("Predicted attractiveness index", #gives
                                    #shared y-axis for all plots
-                                   size = 15, family = "Times", rot = 90)) #if
-#you are wondering, "rot = 90" rotates the y-axis label 90 degrees so that it is
-#vertical
+                                   size = 12, family = "Times", rot = 90))
 
 #Export
-# tiff('figs/effects_plots.tiff', width = 9, height = 5, pointsize = 12,
-#      units = 'in', res = 300)
+# tiff('figs/effects_plots.tiff', width = 18, height = 9, pointsize = 12,
+#      units = 'cm', res = 600)
 # all_effects_plot2
 # dev.off()
 
@@ -339,10 +336,12 @@ flow_plus$class_1 <- factor(flow_plus$class_1, levels = c("0", "3", "10", "8",
 #associated with each class # (e.g., class_1 = 8 is a rain-snow watershed)
 
 flow_plot <- ggplot(flow_plus) +
-  geom_boxplot(aes(x = class_1, y = CV_flow)) +
+  geom_boxplot(aes(x = class_1, y = CV_flow),
+               linewidth = 0.3,
+               outlier.size = 0.5) +
   labs(x = "Watershed type", y = "CV of streamflow") +
   theme_bw() +
-  theme(text = element_text(family = "Times New Roman", size = 16)) +
+  theme(text = element_text(family = "Times New Roman", size = 6)) +
   #theme(axis.text.x = element_text(angle = 90)) +
   scale_x_discrete(labels = c("0" = "Rain-0", "1" = "Snow-1", "2" = "Snow-2",
                               "3" = "Rain-3", "4" = "Snow-4", "5" = "Snow-5",
@@ -352,9 +351,9 @@ flow_plot
 
 #Export as high-res figure
 # tiff("figs/CVflow_side_plot.tiff", width = 8.5, height = 4.2, pointsize = 12,
-#      units = 'in', res = 300)
-# flow_plot #graph that you want to export
-# dev.off( ) 
+#      units = 'cm', res = 600)
+# flow_plot
+# dev.off()
 
 
 

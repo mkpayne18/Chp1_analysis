@@ -53,7 +53,7 @@ obs_pred_plot <- ggplot(bm1_pred, aes(Predicted, Observed)) +
   theme(text = element_text(family = "Times New Roman", size = 7),
         plot.margin = margin(10, 12, 10, 10),
         panel.border = element_rect(colour = "black",
-                                    fill = NA, linewidth = 0.1))
+                                    fill = NA, linewidth = 0.25))
 obs_pred_plot2 <- obs_pred_plot + coord_cartesian(clip = "off")
 obs_pred_plot2
 
@@ -83,7 +83,6 @@ dev_resid_plot <- ggplot(dev_resid, aes(pred, deviance_resid)) +
 dev_resid_plot
 
 
-
 pea_resid <- data.frame(pearson_resid = residuals(bm1, type = "pearson"),
                         pred = fitted(bm1))
 pea_resid_plot <- ggplot(pea_resid, aes(pred, pearson_resid)) +
@@ -94,15 +93,18 @@ pea_resid_plot <- ggplot(pea_resid, aes(pred, pearson_resid)) +
 pea_resid_plot
 
 
-resid_plots <- ggarrange(dev_resid_plot, pea_resid_plot, ncol = 2)
+resid_plots <- ggarrange(dev_resid_plot, pea_resid_plot,
+                         ncol = 2, labels = c("a)", "b)"),
+                         label.x = 0.05, label.y = 0.97,
+                         font.label = list(size = 6, family = "Times"))
 resid_plots
 
 #Export as high-res figure
-# tiff("figs/supplemental/resid_plots.tiff", width = 8.5, height = 4,
-#      pointsize = 12, units = 'cm',
-#      res = 600)
-# resid_plots
-# dev.off()
+tiff("figs/supplemental/resid_plots.tiff", width = 8.5, height = 4,
+     pointsize = 12, units = 'cm',
+     res = 600)
+resid_plots
+dev.off()
 
 
 

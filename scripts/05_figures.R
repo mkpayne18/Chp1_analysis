@@ -170,15 +170,17 @@ R_type2 <- R_type2[!duplicated(R_type2$StreamName),]
 
 #2.2. Create figure ============================================================
 fig2 <- ggplot(data = R_type2, aes(x = Dist_nearest_R, y = Avg_number_strays,
-                                   shape = Release_site_type)) + geom_point(size = 1.5) +
+                                   shape = Release_site_type)) + geom_point(size = 1.8) +
   theme_classic() + scale_shape_manual(values = c(16, 2)) +
   xlab("Distance to the nearest release site (km)") +
   ylab("Average number of hatchery strays") + labs(shape = "Release site type") +
-  theme(axis.text = element_text(size = 7.5),
+  theme(axis.text = element_text(size =6),
         axis.title = element_text(size = 7),
         legend.text = element_text(size = 7),
         legend.title = element_text(size = 7),
-        text=element_text(family="Times New Roman"))
+        text=element_text(family="Times New Roman"),
+        axis.line = element_line(linewidth = 0.2),
+        legend.box.spacing = unit(0, "pt"))
 fig2
 #briefly quantitatively compare the average number of hatchery strays within 40km
 #of release for on-site vs remote release sites
@@ -263,10 +265,11 @@ WMA_plot <- ggplot() +
               aes(x = WMA_Releases_by_Yr, ymin = lower, ymax = upper),
               alpha= 0.3, fill="grey70") +
   xlab("Number of fish released within 40 km") +
-  ylab("Attractiveness index") + theme_classic() +
+  ylab("Predicted attractiveness index") + theme_classic() +
   theme(axis.title = element_text(size = 13)) +
   theme(axis.text = element_text(size = 11.5)) +
-  theme(text=element_text(family="Times New Roman")) #+
+  theme(text=element_text(family="Times New Roman"),
+        plot.margin = margin(5,5,10-4)) #+
 #geom_point(data = trunc_Avg_strays, aes(x = WMA_Releases_by_Yr,
 #y = Avg_number_strays))#+ ylim(0, 20)
 WMA_plot
@@ -288,7 +291,7 @@ CVflow_plot <- ggplot() +
               alpha= 0.3, fill="grey70") +
   xlab("CV of streamflow") +
   ylab("ln(predicted attractiveness index)") + theme_classic() +
-  ylab("Attractiveness Index") + theme_classic() +
+  ylab("") + theme_classic() +
   theme(axis.title = element_text(size = 13)) +
   theme(axis.text = element_text(size = 11.5)) +
   theme(text=element_text(family="Times New Roman")) +
@@ -299,20 +302,16 @@ CVflow_plot #gives you a warning about 3 removed rows; that is because of the
 
 
 #3.4. Combine all effects plots into one fig ===================================
-all_effects_plot <- ggarrange(WMA_plot + rremove("ylab"),
-                              #Cons_plot + rremove("ylab"),
-                              CVflow_plot + rremove("ylab"))
-
-all_effects_plot2 <- annotate_figure(all_effects_plot,
-                  left = text_grob("Predicted attractiveness index", #gives
-                                   #shared y-axis for all plots
-                                   size = 12, family = "Times", rot = 90))
+all_effects_plot <- ggarrange(WMA_plot, CVflow_plot,
+                              ncol = 2, labels = c("a)", "b)"),
+                              label.x = -0.01, label.y = 0.99,
+                              font.label = list(size = 11, family = "Times"))
 
 #Export
-tiff('figs/effects_plots.tiff', width = 18, height = 9, pointsize = 12,
-     units = 'cm', res = 600)
-all_effects_plot2
-dev.off()
+# tiff('figs/effects_plots.tiff', width = 18, height = 9, pointsize = 12,
+#      units = 'cm', res = 600)
+# all_effects_plot2
+# dev.off()
 
 
 
@@ -351,10 +350,10 @@ flow_plot <- ggplot(flow_plus) +
 flow_plot
 
 #Export as high-res figure
-tiff("figs/CVflow_side_plot.tiff", width = 8.5, height = 4.2, pointsize = 12,
-     units = 'cm', res = 600)
-flow_plot
-dev.off()
+# tiff("figs/CVflow_side_plot.tiff", width = 8.5, height = 5, pointsize = 12,
+#      units = 'cm', res = 600)
+# flow_plot
+# dev.off()
 
 
 

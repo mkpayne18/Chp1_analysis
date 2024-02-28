@@ -237,7 +237,7 @@ rm(R_type, R_type2)
 
 
 #4. Covariate effect plots =====================================================
-#This is currently figure 3 of the manuscript/thesis
+#This is currently figure 4 of the manuscript/thesis
 
 #Create function to determine model effects vector for each covariate:
 create_eff <- function(mod_term){

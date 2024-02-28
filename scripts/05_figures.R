@@ -221,7 +221,7 @@ t.test(onsite, Remote) #streams near hatchery on-site releases averaged 21.6 str
 #while remote site-proximate streams averaged 71.8 strays. p = 0.21 (not significant)
 
 #Export as high-res figure
-# tiff("figs/fig2.tiff", width = 8.5, height = 7, pointsize = 12, units = 'cm',
+# tiff("figs/fig3.tiff", width = 8.5, height = 7, pointsize = 12, units = 'cm',
 #      res = 600)
 # fig3
 # dev.off()

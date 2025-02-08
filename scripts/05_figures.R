@@ -353,37 +353,75 @@ all_effects_plot <- ggarrange(WMA_plot, CVflow_plot,
 #Read in df containing flow + Sergeant et al. 2020 variables (created in CV_
 #flow_side_analysis.R)
 flow_plus <- readRDS("output/flow_plus.rds")
-
-### Data tailoring
-flow_plus$class_1 <- as.factor(flow_plus$class_1) #"class" needs to be a factor
-#reorder it to show same watershed types next to each other on boxplot:
-flow_plus$class_1 <- factor(flow_plus$class_1, levels = c("0", "3", "10", "8",
-                                                          "1", "2", "4", "5", "6"))
 #See Sergeant et al. 2020 for more in-depth explanation, but class_1 in a nutshell
 #is the watershed type associated with each CV_flow value assigned to each stream.
 #Page 8 of Sergeant et al. 2020 shows what the different watershed types are
 #associated with each class # (e.g., class_1 = 8 is a rain-snow watershed)
+flow_plus <- flow_plus %>%
+  mutate(class_1 = factor(class_1, levels = c("0", "3", "10", "8",
+                                              "1", "2", "4", "5", "6"),
+                          labels = c("Rain", "Rain", "Rain", "Rain-snow",
+                                     "Snow", "Snow", "Snow", "Snow", "Glacier"))) %>%
+  select(StreamName, class_1)
 
-flow_plot <- ggplot(flow_plus) +
-  geom_boxplot(aes(x = class_1, y = CV_flow),
-               linewidth = 0.3,
-               outlier.size = 0.5) +
-  labs(x = "Watershed type", y = "CV of streamflow") +
-  theme_bw() +
-  theme(text = element_text(family = "Times New Roman", size = 7)) +
-  #theme(axis.text.x = element_text(angle = 90)) +
-  scale_x_discrete(labels = c("0" = "Rain-0", "1" = "Snow-1", "2" = "Snow-2",
-                              "3" = "Rain-3", "4" = "Snow-4", "5" = "Snow-5",
-                              "6" = "Glacier-6", "8" = "Rain-snow-8",
-                              "10" = "Rain-10")) +
-  rotate_x_text(angle = 35)
-flow_plot
+flow <- stray_dat %>% select(StreamName, CV_flow) %>%
+  distinct() %>%
+  left_join(mean_bm1_pred, by = "StreamName") %>%
+  left_join(flow_plus, by = "StreamName") %>%
+  pivot_longer(cols = c(Mean_pred_strays, Mean_obs_strays),
+               names_to = "index_type", values_to = "index") %>%
+  mutate(index_type = factor(index_type,
+                             levels = c("Mean_obs_strays", "Mean_pred_strays"),
+                             labels = c("Observed", "Predicted")))
 
-#Export as high-res figure
-# tiff("figs/CVflow_side_plot.tiff", width = 8.5, height = 5, pointsize = 12,
-#      units = 'cm', res = 600)
-# flow_plot
-# dev.off()
+## plot
+#obs and pred together
+# ggplot(flow, aes(CV_flow, index,
+#                  shape = class_1, alpha = index_type)) +
+#   geom_point() +
+#   theme_classic() + scale_alpha_manual(values = c(0.5, 1))
 
+#separate panels
+#pred
+a <- ggplot(filter(flow, index_type == "Predicted"),
+       aes(CV_flow, index, shape = class_1)) +
+  geom_point() +
+  labs(x = "", y = "Attractiveness index") +
+  theme_classic() +
+  theme(axis.text = element_text(size = 5.5),
+        axis.title = element_text(size = 7),
+        legend.text = element_text(size = 7),
+        legend.title = element_blank(),
+    text=element_text(family="Times New Roman")) +
+  scale_shape_manual(values = c(2,1,8,5)) #+
+  # guides(shape = guide_legend(title = "Watershed type"))
+
+#obs
+b <- ggplot(filter(flow, index_type == "Observed"),
+       aes(CV_flow, index, shape = class_1)) +
+  geom_point() +
+  labs(x = "CV of streamflow", y = "Attractiveness index") +
+  theme_classic() +
+    theme(axis.text = element_text(size = 5.5),
+                axis.title = element_text(size = 7),
+                legend.text = element_text(size = 7),
+                legend.title = element_blank(),
+                text=element_text(family="Times New Roman")) +
+  scale_shape_manual(values = c(2,1,8,5)) #+
+  # guides(shape = guide_legend(title = "Watershed type"))
+
+#combine
+comb_flow <- ggarrange(a, b, ncol = 1, labels = c("a)", "b)"),
+                       common.legend = T,
+                              label.x = -0.005, label.y = 1.0,
+                              font.label = list(size = 7, family = "Times"))
+
+comb_flow
+
+#Export
+tiff('figs/CVflow_side_plot.tiff', width = 8.5, height = 11, pointsize = 12,
+     units = 'cm', res = 600)
+comb_flow
+dev.off()
 
 

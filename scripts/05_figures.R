@@ -6,7 +6,7 @@
 
 # Purpose of this script: Create figures for thesis/manuscript
 
-# Last updated: May 23, 2022
+# Last updated: March 6, 2025
 #-------------------------------------------------------------------------------
 require(tidyverse)
 require(ggplot2)
@@ -55,9 +55,9 @@ data_for_map <- left_join(data_for_map, surv, by = "StreamName")
 #Include hatchery locations (on map, not in dataframe)
 Hatchery_Locations <- read.csv("data/Hatchery_Locations.csv")
 
-#remove Wally Noerenberg and Nitinat River hatcheries
-Hatchery_Locations <- Hatchery_Locations %>% slice(1:12) %>%
-  mutate(H_llocs = "Hatchery locations")
+#remove Wally Noerenberg and Nitinat River hatcheries; they are not in SEAK
+Hatchery_Locations <- Hatchery_Locations %>% drop_na(type) %>%
+  mutate(H_llocs = "Hatchery/release locations")
 
 
 
@@ -100,9 +100,19 @@ fig1
 
 #Add in the hatcheries:
 fig1a <- fig1 + geom_point(data = Hatchery_Locations, aes(x = Longitude,
-                                                          y = Latitude, col=H_llocs),
-                           shape = 24, size = 4, fill = "darkred") + labs(col = "") +
-  scale_color_manual(values = "black") 
+                                                          y = Latitude, col=type,
+                                                          shape = type), size = 4) +
+  labs(col = "") +
+  scale_color_manual(name = "",
+                     labels = c("Hatchery",
+                                "Hatchery/release site",
+                                "Release site"),
+                     values = c("purple", "green", "blue")) +
+  scale_shape_manual(name = "",
+                     labels = c("Hatchery",
+                                "Hatchery/release site",
+                                "Release site"),
+                     values = c(2,2,1))
 fig1a
 
 
@@ -139,6 +149,7 @@ fig1b
 
 #Remove unneeded objects
 rm(surv, usa_can, world)
+
 
 
 
@@ -419,9 +430,26 @@ comb_flow <- ggarrange(a, b, ncol = 1, labels = c("a)", "b)"),
 comb_flow
 
 #Export
-tiff('figs/CVflow_side_plot.tiff', width = 8.5, height = 11, pointsize = 12,
-     units = 'cm', res = 600)
-comb_flow
-dev.off()
+# tiff('figs/CVflow_side_plot.tiff', width = 8.5, height = 11, pointsize = 12,
+#      units = 'cm', res = 600)
+# comb_flow
+# dev.off()
 
+## explore transitional watersheds (watersheds where the class membership, i.e.,
+#watershed type designation is fuzzy, or below the 0.93 threshold defined by
+#Sergeant et al. 2020, indicating those watersheds might go back and forth a 
+#little between watershed types):
+flow_plus <- readRDS("output/flow_plus.rds")
+a <- flow_plus %>% filter(p_class_1 < 0.93) %>%
+  mutate(class_1 = factor(class_1, levels = c("0", "3", "10", "8",
+                                              "1", "2", "4", "5", "6"),
+                          labels = c("Rain", "Rain", "Rain", "Rain-snow",
+                                     "Snow", "Snow", "Snow", "Snow", "Glacier")),
+         class_2 = factor(class_2, levels = c("0", "3", "10", "8",
+                                              "1", "2", "4", "5", "6"),
+                          labels = c("Rain", "Rain", "Rain", "Rain-snow",
+                                     "Snow", "Snow", "Snow", "Snow", "Glacier"))) %>%
+  filter(class_1 != class_2) %>% select(StreamName, CV_flow, class_1, p_class_1,
+                                        class_2, p_class_2)
+a
 

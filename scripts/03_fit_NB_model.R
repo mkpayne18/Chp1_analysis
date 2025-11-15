@@ -8,7 +8,7 @@
 # binomial error distribution to predict the average (effective) number of hatch-
 # ery strays in a stream and year
 
-# Last updated: October 15, 2023
+# Last updated: November 13, 2025
 #-------------------------------------------------------------------------------
 require(lme4)
 require(MuMIn)
@@ -263,7 +263,7 @@ bm2 <- glmer.nb(Avg_number_strays ~ (1|Year) + Cons_Abundance + WMA_Releases_by_
 
 #Note that creating new model fits (like bm1) is not exactly equivalent to extrac-
 #ting the model coefficients from the MuMIn::dredge() object. When comparing 
-#coefs in summary(bmX) to the equivalent model in straymod_dredge, I find that 
+#coefs in summary(bmX) to the equivalent model in NBmod_dredge, I find that 
 #the coefficient estimates only differ at the 4th decimal place (if they even do
 #differ), so this approach is acceptable.
 
@@ -275,6 +275,16 @@ saveRDS(bm1, file = "output/best_model.rds")
 #directly from this script in case you make changes to the top model here:
 # saveRDS(bm2,
 #         file = "~/Documents/CHUM_THESIS/Chp2_analysis/output/best_model2.rds")
+
+
+
+## Follow-up exercise in November 2025 for manuscript revisions
+#compare final model with and without CV of flow
+AICc(bm1)
+no_CVflow <- glmer.nb(Avg_number_strays ~ (1|Year) + WMA_Releases_by_Yr,
+                      data = stray_dat_scaled)
+AICc(no_CVflow)
+saveRDS(no_CVflow, file = "output/no_CVflow_mod.rds")
 
 
 #Remove unneeded objects from this script

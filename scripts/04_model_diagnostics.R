@@ -6,7 +6,7 @@
 
 # Purpose of this script: Assess diagnostics for best model fit 
 
-# Last updated: May 22, 2022
+# Last updated: November 13, 2025
 #-------------------------------------------------------------------------------
 require(lmtest)
 require(lattice)
@@ -163,6 +163,22 @@ cross_val(stray_dat_scaled, bm2, mae_bm2, mean_mae_bm2) #mean MAE = 11.99
 #calculate mae for full dataset instead:
 mae(fitted(null_model), stray_dat_scaled$Avg_number_strays) #14.603
 
+#model with CV flow removed
+#refit model with optimizer for convergence:
+# no_CVflow <- glmer.nb(Avg_number_strays ~ (1|Year) + WMA_Releases_by_Yr,
+#                       data = stray_dat_scaled,
+#                       control = glmerControl(optimizer="bobyqa",
+#                                             optCtrl = list(maxfun = 1e8)))
+# mean_mae_noCV <- vector(length = 10)
+# mae_noCV <- vector(length = 500)
+# cross_val(stray_dat_scaled, no_CVflow, mae_noCV, mean_mae_noCV) #dang, also
+#doesn't converge
+
+#calculate for full dataset instead then, similar to null model
+mae(fitted(no_CVflow), stray_dat_scaled$Avg_number_strays) #22.4
+summary(no_CVflow) #2 fixed effects (WMA_releases + intercept) + theta (dispersion
+#parm) + random effect variance = 4 df for this model
+
 
 #Remove unneeded objects
 rm(mae_bm1, mae_null, mean_mae_bm1, mean_mae_null)
@@ -280,6 +296,7 @@ rm(out, no_out_dat, no_out_pred, no_out, mean_out_pred)
 #8. Calculate pseudo-R^2 for final model =======================================
 MuMIn::r.squaredGLMM(bm1, null = null_model)
 MuMIn::r.squaredGLMM(bm2, null = null_model) #also for mod2
+MuMIn::r.squaredGLMM(no_CVflow, null = null_model)
 ?r.squaredGLMM #use trigamma R^2 estimates. R2m is the marginal R^2, which gives
 #the variance explained by the fixed effects only. R2c is the conditional R^2,
 #which gives the variance explained by the entire model (FE and RE together)

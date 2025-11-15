@@ -6,7 +6,7 @@
 
 # Purpose of this script: Create figures for thesis/manuscript
 
-# Last updated: March 6, 2025
+# Last updated: November 15, 2025
 #-------------------------------------------------------------------------------
 require(tidyverse)
 require(ggplot2)
@@ -397,7 +397,7 @@ flow <- stray_dat %>% select(StreamName, CV_flow) %>%
 a <- ggplot(filter(flow, index_type == "Predicted"),
        aes(CV_flow, index, shape = class_1)) +
   geom_point() +
-  labs(x = "", y = "Attractiveness index") +
+  labs(x = "", y = "Predicted attractiveness index") +
   theme_classic() +
   theme(axis.text = element_text(size = 5.5),
         axis.title = element_text(size = 7),
@@ -406,12 +406,12 @@ a <- ggplot(filter(flow, index_type == "Predicted"),
     text=element_text(family="Times New Roman")) +
   scale_shape_manual(values = c(2,1,8,5)) #+
   # guides(shape = guide_legend(title = "Watershed type"))
-
+a
 #obs
 b <- ggplot(filter(flow, index_type == "Observed"),
        aes(CV_flow, index, shape = class_1)) +
   geom_point() +
-  labs(x = "CV of streamflow", y = "Attractiveness index") +
+  labs(x = "CV of streamflow", y = "Observed attractiveness index") +
   theme_classic() +
     theme(axis.text = element_text(size = 5.5),
                 axis.title = element_text(size = 7),
@@ -425,14 +425,18 @@ b <- ggplot(filter(flow, index_type == "Observed"),
 comb_flow <- ggarrange(a, b, ncol = 1, labels = c("a)", "b)"),
                        common.legend = T,
                               label.x = -0.005, label.y = 1.0,
-                              font.label = list(size = 7, family = "Times"))
+                              font.label = list(size = 7, family = "Times")) +
+  theme(plot.margin = margin(-0.3, 0, -0.01, 0.05, "cm")) 
 
-comb_flow
+c <- plot(annotate_figure(comb_flow,
+                     top = text_grob("Figure 5", size = 8,
+                                     family = "Times", hjust = 4.3,
+                                     vjust = 1)))
 
 #Export
 # tiff('figs/CVflow_side_plot.tiff', width = 8.5, height = 11, pointsize = 12,
 #      units = 'cm', res = 600)
-# comb_flow
+# c
 # dev.off()
 
 ## explore transitional watersheds (watersheds where the class membership, i.e.,
